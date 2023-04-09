@@ -4,12 +4,14 @@ import scipy.io
 import os
 import sys
 import argparse
+
 sys.path.append('../')
 from model import Attention_mask, MTTS_CAN
 import h5py
 import matplotlib.pyplot as plt
 from scipy.signal import butter
 from inference_preprocess import preprocess_raw_video, detrend
+
 
 def predict_vitals(args):
     img_rows = 36
@@ -23,7 +25,7 @@ def predict_vitals(args):
     dXsub = preprocess_raw_video(sample_data_path, dim=36)
     print('dXsub shape', dXsub.shape)
 
-    dXsub_len = (dXsub.shape[0] // frame_depth)  * frame_depth
+    dXsub_len = (dXsub.shape[0] // frame_depth) * frame_depth
     dXsub = dXsub[:dXsub_len, :, :, :]
 
     model = MTTS_CAN(frame_depth, 32, 64, (img_rows, img_cols, 3))
@@ -41,6 +43,10 @@ def predict_vitals(args):
     [b_resp, a_resp] = butter(1, [0.08 / fs * 2, 0.5 / fs * 2], btype='bandpass')
     resp_pred = scipy.signal.filtfilt(b_resp, a_resp, np.double(resp_pred))
 
+    # TODO: Calculate the bpm by finding # of peaks
+
+    # TODO: Using the sliding window to find the continuous HR
+
     ########## Plot ##################
     plt.subplot(211)
     plt.plot(pulse_pred)
@@ -52,12 +58,11 @@ def predict_vitals(args):
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser()
     parser.add_argument('--video_path', type=str, help='processed video path')
-    parser.add_argument('--sampling_rate', type=int, default = 30, help='sampling rate of your video')
-    parser.add_argument('--batch_size', type=int, default = 100, help='batch size (multiplier of 10)')
+    parser.add_argument('--sampling_rate', type=int, default=30, help='sampling rate of your video')
+    parser.add_argument('--batch_size', type=int, default=100, help='batch size (multiplier of 10)')
     args = parser.parse_args()
-
     predict_vitals(args)
 
+    # TODO: Create a script to run through the whole dataset
