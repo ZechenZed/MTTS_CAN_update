@@ -9,7 +9,8 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.layers import Conv2D, Conv3D, Input, AveragePooling2D, \
     multiply, Dense, Dropout, Flatten, AveragePooling3D
 from tensorflow.python.keras.models import Model
-
+from inference_preprocess import preprocess_raw_video
+import matplotlib.pyplot as plt
 
 class Attention_mask(tf.keras.layers.Layer):
     def call(self, x):
@@ -194,6 +195,7 @@ def TS_CAN(n_frame, nb_filters1, nb_filters2, input_shape, kernel_size=(3, 3), d
     d10 = Dense(nb_dense, activation='tanh')(d9)
     d11 = Dropout(dropout_rate2)(d10)
     out = Dense(1)(d11)
+    out = g1
     model = Model(inputs=[diff_input, rawf_input], outputs=out)
     return model
 
@@ -463,3 +465,29 @@ class HeartBeat(keras.callbacks.Callback):
 
     def on_epoch_end(self, epoch, logs={}):
         print('PROGRESS: 0.00%')
+
+
+if __name__ == '__main__':
+    img_rows = 36
+    img_cols = 36
+    frame_depth = 10
+    model_checkpoint = './mtts_can.hdf5'
+    batch_size = 100
+    fs = 25
+    sample_data_path = ""
+
+    dXsub = preprocess_raw_video(sample_data_path, dim=36)
+    print('dXsub shape', dXsub.shape)
+
+    dXsub_len = (dXsub.shape[0] // frame_depth)  * frame_depth
+    dXsub = dXsub[:dXsub_len, :, :, :]
+
+    model = MTTS_CAN(frame_depth, 32, 64, (img_rows, img_cols, 3))
+    model.load_weights(model_checkpoint)
+
+    yptest = model.predict((dXsub[:, :, :, :3], dXsub[:, :, :, -3:]), batch_size=batch_size, verbose=1)
+
+    for ftr in yptest:
+        fig = plt.figure(figsize=(12, 12))
+        plt.imshow(ftr[0, :, :, i - 1], cmap='gray')
+        plt.show()
