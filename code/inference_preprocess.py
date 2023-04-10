@@ -31,7 +31,9 @@ def preprocess_raw_video(videoFilePath, dim=36):
         #     interpolation=cv2.INTER_AREA)
 
         # TODO: Find a new way to crop the facial area for V4V dataset
-
+        vidLxL = cv2.resize(
+            img_as_float(img[200:1240, :, :]), (dim, dim),
+            interpolation=cv2.INTER_AREA)
         vidLxL = cv2.rotate(vidLxL, cv2.ROTATE_90_CLOCKWISE)  # rotate 90 degree
         vidLxL = cv2.cvtColor(vidLxL.astype('float32'), cv2.COLOR_BGR2RGB)
         vidLxL[vidLxL > 1] = 1
