@@ -4,13 +4,48 @@ import scipy.io
 import os
 import sys
 import argparse
+from scipy.signal import find_peaks
 
 sys.path.append('../')
-from model import Attention_mask, MTTS_CAN
+from model import Attention_mask, MTTS_CAN, TS_CAN
 import h5py
 import matplotlib.pyplot as plt
 from scipy.signal import butter
 from inference_preprocess import preprocess_raw_video, detrend
+
+import numpy as np
+from scipy.signal import periodogram
+
+
+def prpsd(BVP, FS, LL_PR, UL_PR):
+    """
+    Estimates a pulse rate from a BVP signal.
+    Inputs:
+        BVP     - A BVP timeseries.
+        FS      - The sample rate of the BVP time series (Hz/fps).
+        LL_PR   - The lower limit for pulse rate (bpm).
+        UL_PR   - The upper limit for pulse rate (bpm).
+        PlotTF  - Boolean to turn plotting results on or off.
+    Outputs:
+        PR      - The estimated PR in BPM.
+    """
+
+    Nyquist = FS / 2
+    FResBPM = 0.5  # resolution (bpm) of bins in power spectrum used to determine PR and SNR
+    N = int((60 * 2 * Nyquist) / FResBPM)
+
+    # Construct Periodogram
+    F, Pxx = periodogram(BVP, window=np.hamming(len(BVP)), nfft=N, fs=FS)
+    FMask = (F >= (LL_PR / 60)) & (F <= (UL_PR / 60))
+
+    # Calculate predicted HR:
+    FRange = F[FMask]
+    PRange = Pxx[FMask]
+    MaxInd = np.argmax(Pxx[FMask], axis=0)
+    PR_F = FRange[MaxInd]
+    PR = PR_F * 60
+
+    return PR
 
 
 def predict_vitals(args):
@@ -20,7 +55,7 @@ def predict_vitals(args):
     model_checkpoint = './mtts_can.hdf5'
     batch_size = args.batch_size
     fs = args.sampling_rate
-    sample_data_path = args.video_path
+    sample_data_path = " ../Phase1_data/Videos/train-001_of_002/" + args.video_name + ".mkv"
 
     dXsub = preprocess_raw_video(sample_data_path, dim=36)
     print('dXsub shape', dXsub.shape)
@@ -43,13 +78,37 @@ def predict_vitals(args):
     [b_resp, a_resp] = butter(1, [0.08 / fs * 2, 0.5 / fs * 2], btype='bandpass')
     resp_pred = scipy.signal.filtfilt(b_resp, a_resp, np.double(resp_pred))
 
-    # TODO: Calculate the bpm by finding # of peaks
+    # Read the ground truth file and using sliding window to calculate the difference
+    HR_predicted = np.ones(dXsub_len)
+    with open("../Phase1_data/Ground_truth/Physiology/" + args.video_name + ".txt") as f:
+        contents = f.read()
+        contents = contents.split(", ")
+        start = 2
+        end = start + dXsub_len
+        print('Total number of continuous ground truth frame:', end - start)
+        window_size = 1
+        HR_gt = [float(contents[start])]
+        for i in range(start + 1, end):
+            if contents[i] == contents[i - 1]:
+                window_size += 1
+            else:
+                HR_pred_curr = prpsd(pulse_pred[i - window_size:i], fs, 40, 180)
+                HR_predicted[i - window_size - 2:i - 1] = HR_pred_curr
+                window_size = 1
+            if i == end - 1:
+                window_size += 1
+                HR_pred_curr = prpsd(pulse_pred[i - window_size:i], fs, 40, 180)
+                HR_predicted[i - window_size - 2:i - 1] = HR_pred_curr
+            HR_gt.append(float(contents[i]))
+        HR_gt = np.array(HR_gt)
+        MAE = sum(abs(HR_predicted - HR_gt)) / dXsub_len
+        print(HR_gt, HR_predicted)
+        print("MAE: ", MAE)
 
-    # TODO: Using the sliding window to find the continuous HR
-
-    ########## Plot ##################
+    ################## Plot ##################
     plt.subplot(211)
     plt.plot(pulse_pred)
+    # plt.plot(peaks, pulse_pred[peaks], "x")
     plt.title('Pulse Prediction')
     plt.subplot(212)
     plt.plot(resp_pred)
@@ -59,10 +118,9 @@ def predict_vitals(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--video_path', type=str, help='processed video path')
-    parser.add_argument('--sampling_rate', type=int, default=30, help='sampling rate of your video')
+    parser.add_argument('--video_name', type=str, help='processed video name')
+    parser.add_argument('--sampling_rate', type=int, default=25, help='sampling rate of your video')
     parser.add_argument('--batch_size', type=int, default=100, help='batch size (multiplier of 10)')
     args = parser.parse_args()
     predict_vitals(args)
 
-    # TODO: Create a script to run through the whole dataset
