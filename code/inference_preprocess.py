@@ -8,6 +8,24 @@ import scipy.io
 from scipy.sparse import spdiags
 
 
+def resize_image(img, h_new, w_old, h_old):
+    "I believe reszing image before face detection will speed up"
+    r = h_new / float(h_old)
+    dim = (int(w_old * r), h_new)
+    resized = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
+    return resized
+
+
+def non_skin_remove(patches):
+    patches_hsv = [cv2.cvtColor(i, cv2.COLOR_RGB2HSV) for i in patches]
+    lower = np.array([0, 48, 80], dtype="uint8")
+    upper = np.array([20, 255, 255], dtype="uint8")
+    skinMask = [cv2.inRange(i, lower, upper) for i in patches_hsv]
+    skinindex = [i for i, j in enumerate(skinMask) if j.sum() > 5]
+    patches = [patches[i] for i in skinindex]
+    return patches
+
+
 def preprocess_raw_video(videoFilePath, dim=36):
     #########################################################################
     # set up
@@ -23,6 +41,8 @@ def preprocess_raw_video(videoFilePath, dim=36):
     # print("Orignal Height", height)
     # print("Original width", width)
     # print("Total number of frames:", totalFrames)
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_upperbody.xml')
+
     #########################################################################
     # Crop each frame size into dim x dim
     while success:
@@ -30,16 +50,24 @@ def preprocess_raw_video(videoFilePath, dim=36):
         # vidLxL = cv2.resize(
         #     img_as_float(img[:, int(width / 2) - int(height / 2 + 1):int(height / 2) + int(width / 2), :]), (dim, dim),
         #     interpolation=cv2.INTER_AREA)
+        # vidLxL = cv2.resize(img_as_float(img[200:1240, :, :]), (dim, dim), interpolation=cv2.INTER_AREA)
 
-        # TODO: Find a new way to crop the facial area for V4V dataset
-        vidLxL = cv2.resize(
-            img_as_float(img[200:1240, :, :]), (dim, dim),
-            interpolation=cv2.INTER_AREA)
+        # # TODO: Find a new way to crop the facial area for V4V dataset
+        img = resize_image(img, 300, width, height)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+        for (x, y, w, h) in faces:
+            roi = img[y:y + h, x:x + w]
+        vidLxL = cv2.resize(roi, (dim, dim))
+
         vidLxL = cv2.rotate(vidLxL, cv2.ROTATE_90_CLOCKWISE)  # rotate 90 degree
-        vidLxL = cv2.cvtColor(vidLxL.astype('float32'), cv2.COLOR_BGR2RGB)
-        vidLxL[vidLxL > 1] = 1
-        vidLxL[vidLxL < (1 / 255)] = 1 / 255
-        Xsub[i, :, :, :] = vidLxL
+        # vidLxL = cv2.cvtColor(vidLxL.astype('float32'), cv2.COLOR_BGR2RGB)
+        vidLxL = cv2.cvtColor(vidLxL, cv2.COLOR_BGR2RGB)
+
+        # vidLxL[vidLxL > 1] = 1
+        # vidLxL[vidLxL < (1 / 255)] = 1 / 255
+        # Xsub[i, :, :, :] = vidLxL
+        Xsub[i, :, :, :] = vidLxL/255.0
         success, img = vidObj.read()  # read the next one
         i = i + 1
     # plt.imshow(Xsub[0])

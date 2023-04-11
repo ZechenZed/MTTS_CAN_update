@@ -55,10 +55,10 @@ def predict_vitals(video_name):
     img_rows = 36
     img_cols = 36
     frame_depth = 10
-    model_checkpoint = './mtts_can.hdf5'
+    model_checkpoint = "../mtts_can.hdf5"
     batch_size = 100
     fs = 25
-    sample_data_path = " ../Phase1_data/Videos/train-001_of_002/" + video_name + ".mkv"
+    sample_data_path = " ../../Phase1_data/Videos/train-001_of_002/" + video_name + ".mkv"
 
     dXsub = preprocess_raw_video(sample_data_path, dim=36)
     print('dXsub shape', dXsub.shape)
@@ -84,7 +84,7 @@ def predict_vitals(video_name):
     # Read the ground truth file and using sliding window to calculate the difference
     HR_predicted = np.ones(dXsub_len)
 
-    with open("../Phase1_data/Ground_truth/Physiology/" + video_name + ".txt") as f:
+    with open("../../Phase1_data/Ground_truth/Physiology/" + video_name + ".txt") as f:
         contents = f.read()
         contents = contents.split(", ")
         start = 2
@@ -129,14 +129,14 @@ if __name__ == "__main__":
     # parser.add_argument('--batch_size', type=int, default=100, help='batch size (multiplier of 10)')
     # args = parser.parse_args()
 
-    dir_path = "../Phase1_data/Videos/train-001_of_002"
+    dir_path = "../../Phase1_data/Videos/train-001_of_002"
     res = []
 
     for path in os.listdir(dir_path):
         if os.path.isfile(os.path.join(dir_path, path)):
             res.append(path)
     print(res)
-    num_video = len(res)
+    num_video = 10
     MAE_array = np.empty(num_video)
     RMSE_array = np.empty(num_video)
 
@@ -148,5 +148,5 @@ if __name__ == "__main__":
         RMSE_array[i] = RMSE
     print("Average MAE for 001:", sum(MAE_array) / num_video)
     print("Average RMSE for 001:", sum(RMSE_array) / num_video)
-    np.savetxt("MAE_001", MAE_array, delimiter=" ")
-    np.savetxt("RMSE_001", RMSE_array, delimiter=" ")
+    # np.savetxt("MAE_001", MAE_array, delimiter=" ")
+    # np.savetxt("RMSE_001", RMSE_array, delimiter=" ")
