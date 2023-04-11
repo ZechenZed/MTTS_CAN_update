@@ -20,8 +20,8 @@ def preprocess_raw_video(videoFilePath, dim=36):
     width = vidObj.get(cv2.CAP_PROP_FRAME_WIDTH)
     success, img = vidObj.read()
     dims = img.shape
-    print("Orignal Height", height)
-    print("Original width", width)
+    # print("Orignal Height", height)
+    # print("Original width", width)
     # print("Total number of frames:", totalFrames)
     #########################################################################
     # Crop each frame size into dim x dim
