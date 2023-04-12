@@ -41,7 +41,7 @@ def preprocess_raw_video(videoFilePath, dim=36):
     # print("Orignal Height", height)
     # print("Original width", width)
     # print("Total number of frames:", totalFrames)
-    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_upperbody.xml')
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
     #########################################################################
     # Crop each frame size into dim x dim
@@ -50,24 +50,32 @@ def preprocess_raw_video(videoFilePath, dim=36):
         # vidLxL = cv2.resize(
         #     img_as_float(img[:, int(width / 2) - int(height / 2 + 1):int(height / 2) + int(width / 2), :]), (dim, dim),
         #     interpolation=cv2.INTER_AREA)
-        # vidLxL = cv2.resize(img_as_float(img[200:1240, :, :]), (dim, dim), interpolation=cv2.INTER_AREA)
 
-        # # TODO: Find a new way to crop the facial area for V4V dataset
-        img = resize_image(img, 300, width, height)
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        faces = face_cascade.detectMultiScale(gray, 1.3, 5)
-        for (x, y, w, h) in faces:
-            roi = img[y:y + h, x:x + w]
-        vidLxL = cv2.resize(roi, (dim, dim))
+        # TODO: Find a new way to crop the facial area for V4V dataset
+        vidLxL = cv2.resize(img_as_float(img[200:1240, :, :]), (dim, dim), interpolation=cv2.INTER_AREA)
+        # img = resize_image(img, 300, width, height)
+        # height, width, _ = img.shape
+        # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        # faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+        # for (x, y, w, h) in faces:
+        #     x_edge = int(width) - x - w
+        #     if x_edge > x:
+        #         window = x
+        #     else:
+        #         window = x_edge
+        #     roi = img[y - window:y + h + window, :]
+        # vidLxL = cv2.resize(roi, (dim, dim))
 
         vidLxL = cv2.rotate(vidLxL, cv2.ROTATE_90_CLOCKWISE)  # rotate 90 degree
-        # vidLxL = cv2.cvtColor(vidLxL.astype('float32'), cv2.COLOR_BGR2RGB)
-        vidLxL = cv2.cvtColor(vidLxL, cv2.COLOR_BGR2RGB)
+
+        vidLxL = cv2.cvtColor(vidLxL.astype('float32'), cv2.COLOR_BGR2RGB)
+        # vidLxL = cv2.cvtColor(vidLxL, cv2.COLOR_BGR2RGB)
 
         # vidLxL[vidLxL > 1] = 1
         # vidLxL[vidLxL < (1 / 255)] = 1 / 255
         # Xsub[i, :, :, :] = vidLxL
-        Xsub[i, :, :, :] = vidLxL/255.0
+        Xsub[i, :, :, :] = vidLxL / 255.0
+
         success, img = vidObj.read()  # read the next one
         i = i + 1
     # plt.imshow(Xsub[0])

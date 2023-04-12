@@ -8,6 +8,7 @@ from scipy.signal import find_peaks
 import os
 import csv
 import pandas as pd
+from scipy.stats import pearsonr
 
 sys.path.append('../')
 from model import Attention_mask, MTTS_CAN, TS_CAN
@@ -61,7 +62,7 @@ def predict_vitals(video_name):
     sample_data_path = " ../../Phase1_data/Videos/train-001_of_002/" + video_name + ".mkv"
 
     dXsub = preprocess_raw_video(sample_data_path, dim=36)
-    print('dXsub shape', dXsub.shape)
+    # print('dXsub shape', dXsub.shape)
 
     dXsub_len = (dXsub.shape[0] // frame_depth) * frame_depth
     dXsub = dXsub[:dXsub_len, :, :, :]
@@ -106,12 +107,13 @@ def predict_vitals(video_name):
             HR_gt.append(float(contents[i]))
         HR_gt = np.array(HR_gt)
 
+    PC, _ = pearsonr(HR_gt, HR_predicted)
     MAE = sum(abs(HR_predicted - HR_gt)) / dXsub_len
     RMSE = np.sqrt(sum(abs(HR_predicted - HR_gt) ** 2) / dXsub_len)
     print("MAE: ", MAE)
     print("RMSE: ", RMSE)
-
-    return MAE, RMSE
+    print("PC", PC)
+    return MAE, RMSE, PC
     ################## Plot ##################
     # plt.subplot(211)
     # plt.plot(pulse_pred)
@@ -139,14 +141,18 @@ if __name__ == "__main__":
     num_video = 10
     MAE_array = np.empty(num_video)
     RMSE_array = np.empty(num_video)
+    PC_array = np.empty(num_video)
 
     for i in range(num_video):
         print("Current Video:", res[i])
         video_name = res[i][0:-4]
-        MAE, RMSE = predict_vitals(video_name)
+        MAE, RMSE, PC = predict_vitals(video_name)
         MAE_array[i] = MAE
         RMSE_array[i] = RMSE
+        PC_array[i] = PC
     print("Average MAE for 001:", sum(MAE_array) / num_video)
     print("Average RMSE for 001:", sum(RMSE_array) / num_video)
-    # np.savetxt("MAE_001", MAE_array, delimiter=" ")
-    # np.savetxt("RMSE_001", RMSE_array, delimiter=" ")
+    print("Average PC of 001:", sum(PC_array) / num_video)
+    np.savetxt("../MAE_001_10_fc.txt", MAE_array, delimiter=" ")
+    np.savetxt("../RMSE_001_10_fc.txt", RMSE_array, delimiter=" ")
+    np.savetxt("../PC_001_10_fc.txt", RMSE_array, delimiter=" ")
