@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 import cv2
 from skimage.util import img_as_float
@@ -38,6 +40,7 @@ def preprocess_raw_video(videoFilePath, dim=36):
     width = vidObj.get(cv2.CAP_PROP_FRAME_WIDTH)
     success, img = vidObj.read()
     rows, cols, _ = img.shape
+    # print("image shape",img.shape)
     # print("Orignal Height", height)
     # print("Original width", width)
     # print("Total number of frames:", totalFrames)
@@ -60,7 +63,7 @@ def preprocess_raw_video(videoFilePath, dim=36):
         # img = resize_image(img, 300, width, height)
         # width, height, _ = img.shape
 
-        width_edge = 100
+        width_edge = 200
         height_edge = height * (width_edge / width)
         original_cf = np.float32([[0, 0], [width - 1, 0], [(width - 1) / 2, height - 1]])
         transed_cf = np.float32([[width_edge - 1, height_edge - 1], [width - width_edge - 1, height_edge - 1],
@@ -73,12 +76,15 @@ def preprocess_raw_video(videoFilePath, dim=36):
         roi = 0
         # print(img.shape)
 
-        if faces == ():
-            roi = img_as_float(img[int(200 + height_edge):int(1240 - height_edge), int(100):int(width - 100), :])
-            print("WARNING")
-        else:
-            for (x, y, w, h) in faces:
-                roi = img_as_float(img[y - 200:y + w, x - 100:x + w + 100, :])
+        # if faces == ():
+        #     print("WARNING")
+        #     roi = img_as_float(img[int(200 + height_edge):int(1240 - height_edge), int(100):int(width - 100), :])
+        # else:
+        #     for (x, y, w, h) in faces:
+        #         roi = img_as_float(img[y - 200:y + w, x - 100:x + w + 100, :])
+        for (x, y, w, h) in faces:
+            roi = img_as_float(img[y - 170:y + w -10, x - 80:x + w + 80, :])
+
         vidLxL = cv2.resize(roi, (dim, dim), interpolation=cv2.INTER_AREA)
         vidLxL = cv2.rotate(vidLxL, cv2.ROTATE_90_CLOCKWISE)  # rotate 90 degree
 
@@ -92,9 +98,8 @@ def preprocess_raw_video(videoFilePath, dim=36):
 
         success, img = vidObj.read()  # read the next one
         i = i + 1
-    # plt.imshow(Xsub[0])
-    # plt.title('Sample Preprocessed Frame')
-    # plt.show()
+
+
     #########################################################################
     # Normalized Frames in the motion branch
     normalized_len = len(t) - 1
