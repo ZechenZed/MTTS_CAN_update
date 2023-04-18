@@ -83,7 +83,7 @@ def preprocess_raw_video(videoFilePath, dim=36):
         #     for (x, y, w, h) in faces:
         #         roi = img_as_float(img[y - 200:y + w, x - 100:x + w + 100, :])
         for (x, y, w, h) in faces:
-            roi = img_as_float(img[y - 170:y + w -10, x - 80:x + w + 80, :])
+            roi = img_as_float(img[y - 150:y + w, x - 75:x + w + 75, :])
 
         vidLxL = cv2.resize(roi, (dim, dim), interpolation=cv2.INTER_AREA)
         vidLxL = cv2.rotate(vidLxL, cv2.ROTATE_90_CLOCKWISE)  # rotate 90 degree
@@ -99,6 +99,8 @@ def preprocess_raw_video(videoFilePath, dim=36):
         success, img = vidObj.read()  # read the next one
         i = i + 1
 
+    plt.imshow(Xsub[0])
+    plt.show()
 
     #########################################################################
     # Normalized Frames in the motion branch
