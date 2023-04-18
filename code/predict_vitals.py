@@ -143,7 +143,7 @@ if __name__ == "__main__":
     RMSE_array = np.empty(num_video)
     PC_array = np.empty(num_video)
 
-    for i in range(10, num_video):
+    for i in range(num_video):
         print("Current Video:", res[i])
         video_name = res[i][0:-4]
         MAE, RMSE, PC = predict_vitals(video_name)
