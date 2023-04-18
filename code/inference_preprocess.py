@@ -37,7 +37,7 @@ def preprocess_raw_video(videoFilePath, dim=36):
     height = vidObj.get(cv2.CAP_PROP_FRAME_HEIGHT)
     width = vidObj.get(cv2.CAP_PROP_FRAME_WIDTH)
     success, img = vidObj.read()
-    dims = img.shape
+    rows, cols, _ = img.shape
     # print("Orignal Height", height)
     # print("Original width", width)
     # print("Total number of frames:", totalFrames)
@@ -52,29 +52,43 @@ def preprocess_raw_video(videoFilePath, dim=36):
         #     interpolation=cv2.INTER_AREA)
 
         # TODO: Find a new way to crop the facial area for V4V dataset
-        vidLxL = cv2.resize(img_as_float(img[200:1240, :, :]), (dim, dim), interpolation=cv2.INTER_AREA)
-        # img = resize_image(img, 300, width, height)
-        # height, width, _ = img.shape
-        # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        # faces = face_cascade.detectMultiScale(gray, 1.3, 5)
-        # for (x, y, w, h) in faces:
-        #     x_edge = int(width) - x - w
-        #     if x_edge > x:
-        #         window = x
-        #     else:
-        #         window = x_edge
-        #     roi = img[y - window:y + h + window, :]
-        # vidLxL = cv2.resize(roi, (dim, dim))
 
+        ## Experimental
+        # vidLxL = cv2.resize(img_as_float(img[200:1240, :, :]), (dim, dim), interpolation=cv2.INTER_AREA)
+
+        # Face Crop
+        # img = resize_image(img, 300, width, height)
+        # width, height, _ = img.shape
+
+        width_edge = 100
+        height_edge = height * (width_edge / width)
+        original_cf = np.float32([[0, 0], [width - 1, 0], [(width - 1) / 2, height - 1]])
+        transed_cf = np.float32([[width_edge - 1, height_edge - 1], [width - width_edge - 1, height_edge - 1],
+                                 [(width - 1) / 2, height - height_edge - 1]])
+        matrix = cv2.getAffineTransform(original_cf, transed_cf)
+        img = cv2.warpAffine(img, matrix, (cols, rows))
+
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+        roi = 0
+        # print(img.shape)
+
+        if faces == ():
+            roi = img_as_float(img[int(200 + height_edge):int(1240 - height_edge), int(100):int(width - 100), :])
+            print("WARNING")
+        else:
+            for (x, y, w, h) in faces:
+                roi = img_as_float(img[y - 200:y + w, x - 100:x + w + 100, :])
+        vidLxL = cv2.resize(roi, (dim, dim), interpolation=cv2.INTER_AREA)
         vidLxL = cv2.rotate(vidLxL, cv2.ROTATE_90_CLOCKWISE)  # rotate 90 degree
 
         vidLxL = cv2.cvtColor(vidLxL.astype('float32'), cv2.COLOR_BGR2RGB)
         # vidLxL = cv2.cvtColor(vidLxL, cv2.COLOR_BGR2RGB)
 
-        # vidLxL[vidLxL > 1] = 1
-        # vidLxL[vidLxL < (1 / 255)] = 1 / 255
-        # Xsub[i, :, :, :] = vidLxL
-        Xsub[i, :, :, :] = vidLxL / 255.0
+        vidLxL[vidLxL > 1] = 1
+        vidLxL[vidLxL < (1 / 255)] = 1 / 255
+        Xsub[i, :, :, :] = vidLxL
+        # Xsub[i, :, :, :] = vidLxL / 255.0
 
         success, img = vidObj.read()  # read the next one
         i = i + 1

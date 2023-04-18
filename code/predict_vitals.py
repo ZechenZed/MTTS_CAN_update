@@ -138,12 +138,12 @@ if __name__ == "__main__":
         if os.path.isfile(os.path.join(dir_path, path)):
             res.append(path)
     print(res)
-    num_video = 10
+    num_video = len(res)
     MAE_array = np.empty(num_video)
     RMSE_array = np.empty(num_video)
     PC_array = np.empty(num_video)
 
-    for i in range(num_video):
+    for i in range(10,num_video):
         print("Current Video:", res[i])
         video_name = res[i][0:-4]
         MAE, RMSE, PC = predict_vitals(video_name)
@@ -153,6 +153,6 @@ if __name__ == "__main__":
     print("Average MAE for 001:", sum(MAE_array) / num_video)
     print("Average RMSE for 001:", sum(RMSE_array) / num_video)
     print("Average PC of 001:", sum(PC_array) / num_video)
-    np.savetxt("../MAE_001_10_fc.txt", MAE_array, delimiter=" ")
-    np.savetxt("../RMSE_001_10_fc.txt", RMSE_array, delimiter=" ")
-    np.savetxt("../PC_001_10_fc.txt", RMSE_array, delimiter=" ")
+    np.savetxt("../MAE_001_fc.txt", MAE_array, delimiter=" ")
+    np.savetxt("../RMSE_001_fc.txt", RMSE_array, delimiter=" ")
+    np.savetxt("../PC_001_fc.txt", PC_array, delimiter=" ")
