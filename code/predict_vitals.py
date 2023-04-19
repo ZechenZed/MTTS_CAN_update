@@ -145,7 +145,6 @@ if __name__ == "__main__":
     RMSE_array = np.empty(num_video)
     PC_array = np.empty(num_video)
 
-
     results = []
     results.append(Parallel(n_jobs=8)(delayed(predict_vitals)(video[0:-4]) for video in res[0:5]))
     results = np.array(results)

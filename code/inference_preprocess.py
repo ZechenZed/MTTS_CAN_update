@@ -105,7 +105,6 @@ def preprocess_raw_video(videoFilePath, dim=36):
     # plt.imshow(Xsub[n])
     # plt.show()
 
-
     #########################################################################
     # Normalized Frames in the motion branch
     normalized_len = len(t) - 1
