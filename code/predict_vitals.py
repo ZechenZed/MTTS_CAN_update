@@ -9,6 +9,7 @@ import os
 import csv
 import pandas as pd
 from scipy.stats import pearsonr
+import multiprocessing
 
 sys.path.append('../')
 from model import Attention_mask, MTTS_CAN, TS_CAN
@@ -19,6 +20,7 @@ from inference_preprocess import preprocess_raw_video, detrend
 
 import numpy as np
 from scipy.signal import periodogram
+from joblib import Parallel, delayed
 
 
 def prpsd(BVP, FS, LL_PR, UL_PR):
@@ -143,16 +145,21 @@ if __name__ == "__main__":
     RMSE_array = np.empty(num_video)
     PC_array = np.empty(num_video)
 
-    for i in range(num_video):
-        print("Current Video:", res[i])
-        video_name = res[i][0:-4]
-        MAE, RMSE, PC = predict_vitals(video_name)
-        MAE_array[i] = MAE
-        RMSE_array[i] = RMSE
-        PC_array[i] = PC
-    print("Average MAE for 001:", sum(MAE_array) / num_video)
-    print("Average RMSE for 001:", sum(RMSE_array) / num_video)
-    print("Average PC of 001:", sum(PC_array) / num_video)
-    np.savetxt("../MAE_001_fc.txt", MAE_array, delimiter=" ")
-    np.savetxt("../RMSE_001_fc.txt", RMSE_array, delimiter=" ")
-    np.savetxt("../PC_001_fc.txt", RMSE_array, delimiter=" ")
+    results = []
+    results.append(Parallel(n_jobs=8)(delayed(predict_vitals)(video[0:-4]) for video in res[0:5]))
+    results = np.array(results)
+    print(results.shape)
+
+    # for i in range(12, num_video):
+    #     print("Current Video:", res[i])
+    #     video_name = res[i][0:-4]
+    #     MAE, RMSE, PC = predict_vitals(video_name)
+    #     MAE_array[i] = MAE
+    #     RMSE_array[i] = RMSE
+    #     PC_array[i] = PC
+    # print("Average MAE for 001:", sum(MAE_array) / num_video)
+    # print("Average RMSE for 001:", sum(RMSE_array) / num_video)
+    # print("Average PC of 001:", sum(PC_array) / num_video)
+    # np.savetxt("../MAE_001_fc.txt", MAE_array, delimiter=" ")
+    # np.savetxt("../RMSE_001_fc.txt", RMSE_array, delimiter=" ")
+    # np.savetxt("../PC_001_fc.txt", RMSE_array, delimiter=" ")
