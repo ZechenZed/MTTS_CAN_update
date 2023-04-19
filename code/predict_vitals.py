@@ -9,7 +9,6 @@ import os
 import csv
 import pandas as pd
 from scipy.stats import pearsonr
-import multiprocessing
 
 sys.path.append('../')
 from model import Attention_mask, MTTS_CAN, TS_CAN
@@ -21,7 +20,6 @@ from inference_preprocess import preprocess_raw_video, detrend
 import numpy as np
 from scipy.signal import periodogram
 from joblib import Parallel, delayed
-
 
 def prpsd(BVP, FS, LL_PR, UL_PR):
     """
@@ -141,16 +139,17 @@ if __name__ == "__main__":
             res.append(path)
     print(res)
     num_video = len(res)
-    MAE_array = np.empty(num_video)
-    RMSE_array = np.empty(num_video)
-    PC_array = np.empty(num_video)
 
     results = []
-    results.append(Parallel(n_jobs=8)(delayed(predict_vitals)(video[0:-4]) for video in res[0:5]))
+    results.append(Parallel(n_jobs=-1)(delayed(predict_vitals)(video[0:-4])for video in res[0:50]))
     results = np.array(results)
-    print(results.shape)
-
-    # for i in range(12, num_video):
+    MAE = results[0,:,0]
+    RMSE = results[0, :, 1]
+    PC = results[0, :, 2]
+    print("MAE:",MAE)
+    print("RMSE:", RMSE)
+    print("PC:", PC)
+    # for i in range(num_video):
     #     print("Current Video:", res[i])
     #     video_name = res[i][0:-4]
     #     MAE, RMSE, PC = predict_vitals(video_name)

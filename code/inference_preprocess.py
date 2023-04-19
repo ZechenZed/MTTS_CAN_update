@@ -40,6 +40,7 @@ def preprocess_raw_video(videoFilePath, dim=36):
     width = vidObj.get(cv2.CAP_PROP_FRAME_WIDTH)
     success, img = vidObj.read()
     rows, cols, _ = img.shape
+    # print("image shape",img.shape)
     # print("Orignal Height", height)
     # print("Original width", width)
     # print("Total number of frames:", totalFrames)
@@ -82,9 +83,7 @@ def preprocess_raw_video(videoFilePath, dim=36):
         #     for (x, y, w, h) in faces:
         #         roi = img_as_float(img[y - 200:y + w, x - 100:x + w + 100, :])
         for (x, y, w, h) in faces:
-            # if i == 0:
-            #     face_size = w
-            roi = img_as_float(img[int(y - 0.4 * h):int(y + h), int(x - 0.2 * w):int(x + 1.2 * w), :])
+            roi = img_as_float(img[int(y - 0.4*h):int(y + w), int(x - 0.2*w):int(x + w + 75), :])
 
         vidLxL = cv2.resize(roi, (dim, dim), interpolation=cv2.INTER_AREA)
         vidLxL = cv2.rotate(vidLxL, cv2.ROTATE_90_CLOCKWISE)  # rotate 90 degree
@@ -100,8 +99,8 @@ def preprocess_raw_video(videoFilePath, dim=36):
         success, img = vidObj.read()  # read the next one
         i = i + 1
 
-    # n = random.randint(0, i)
-    # plt.imshow(Xsub[n])
+    # n = random.randint(0,i)
+    # plt.imshow(Xsub[0])
     # plt.show()
 
     #########################################################################
