@@ -47,7 +47,6 @@ def preprocess_raw_video(videoFilePath, dim=36):
 
     #########################################################################
     # Crop each frame size into dim x dim
-    face_square = 0
     while success:
         t.append(vidObj.get(cv2.CAP_PROP_POS_MSEC))  # current timestamp in milisecond
         # vidLxL = cv2.resize(
