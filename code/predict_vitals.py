@@ -61,7 +61,7 @@ def predict_vitals(video_name):
     model_checkpoint = "../mtts_can.hdf5"
     batch_size = 100
     fs = 25
-    sample_data_path = " ../../Phase1_data/Videos/train-002_of_002/" + video_name + ".mkv"
+    sample_data_path = " ../../Phase1_data/Videos/train-001_of_002/" + video_name + ".mkv"
 
     dXsub = preprocess_raw_video(sample_data_path, dim=36)
     # print('dXsub shape', dXsub.shape)
@@ -133,7 +133,7 @@ if __name__ == "__main__":
     # parser.add_argument('--batch_size', type=int, default=100, help='batch size (multiplier of 10)')
     # args = parser.parse_args()
 
-    dir_path = "../../Phase1_data/Videos/train-002_of_002"
+    dir_path = "../../Phase1_data/Videos/train-001_of_002"
     res = []
 
     for path in os.listdir(dir_path):
@@ -141,7 +141,7 @@ if __name__ == "__main__":
             res.append(path)
     # print(res)
     num_video = len(res)
-    results = [Parallel(n_jobs=-1)(delayed(predict_vitals)(video[0:-4]) for video in res[0:5])]
+    results = [Parallel(n_jobs=-1)(delayed(predict_vitals)(video[0:-4]) for video in res)]
     results = np.array(results)
     MAE = results[0, :, 0]
     RMSE = results[0, :, 1]
@@ -162,10 +162,15 @@ if __name__ == "__main__":
     # print("Average MAE for 001:", sum(MAE_array) / num_video)
     # print("Average RMSE for 001:", sum(RMSE_array) / num_video)
     # print("Average PC of 001:", sum(PC_array) / num_video)
-    fig, axs = plt.subplots(1, 1, figsize=(10, 7), tight_layout=True)
-    axs.hist(MAE, bins=5)
+    fig1, axs1 = plt.subplots(3, 1, figsize=(10, 7), tight_layout=True)
+    axs1[0].hist(MAE, bins=10)
+    axs1[0].title.set_text("MAE")
+    axs1[1].hist(RMSE, bins=10)
+    axs1[1].title.set_text("RMSE")
+    axs1[2].hist(RMSE, bins=10)
+    axs1[2].title.set_text("PC")
     plt.show()
 
-    np.savetxt("../MAE_002_fc_opt.txt", MAE, delimiter=",")
-    np.savetxt("../RMSE_002_fc_opt.txt", RMSE, delimiter=",")
-    np.savetxt("../PC_002_fc_opt.txt", RMSE, delimiter=",")
+    np.savetxt("../Error/MAE_001_fc_opt.txt", MAE, delimiter=",")
+    np.savetxt("../Error/RMSE_001_fc_opt.txt", RMSE, delimiter=",")
+    np.savetxt("../Error/PC_001_fc_opt.txt", RMSE, delimiter=",")

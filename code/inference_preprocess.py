@@ -100,7 +100,7 @@ def preprocess_raw_video(videoFilePath, dim=36):
         i = i + 1
 
     # n = random.randint(0,i)
-    # plt.imshow(Xsub[0])
+    # plt.imshow(Xsub[n])
     # plt.show()
 
     #########################################################################
