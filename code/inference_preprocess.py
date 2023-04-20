@@ -83,7 +83,7 @@ def preprocess_raw_video(videoFilePath, dim=36):
         #     for (x, y, w, h) in faces:
         #         roi = img_as_float(img[y - 200:y + w, x - 100:x + w + 100, :])
         for (x, y, w, h) in faces:
-            roi = img_as_float(img[int(y - 0.4*h):int(y + w), int(x - 0.2*w):int(x + w + 75), :])
+            roi = img_as_float(img[int(y - 0.25*h):int(y + 1.05*h), int(x - 0.15*w):int(x + 1.15*w), :])
 
         vidLxL = cv2.resize(roi, (dim, dim), interpolation=cv2.INTER_AREA)
         vidLxL = cv2.rotate(vidLxL, cv2.ROTATE_90_CLOCKWISE)  # rotate 90 degree

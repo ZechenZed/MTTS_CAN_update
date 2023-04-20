@@ -20,6 +20,8 @@ from inference_preprocess import preprocess_raw_video, detrend
 import numpy as np
 from scipy.signal import periodogram
 from joblib import Parallel, delayed
+from statistics import mean
+
 
 def prpsd(BVP, FS, LL_PR, UL_PR):
     """
@@ -59,7 +61,7 @@ def predict_vitals(video_name):
     model_checkpoint = "../mtts_can.hdf5"
     batch_size = 100
     fs = 25
-    sample_data_path = " ../../Phase1_data/Videos/train-001_of_002/" + video_name + ".mkv"
+    sample_data_path = " ../../Phase1_data/Videos/train-002_of_002/" + video_name + ".mkv"
 
     dXsub = preprocess_raw_video(sample_data_path, dim=36)
     # print('dXsub shape', dXsub.shape)
@@ -97,12 +99,12 @@ def predict_vitals(video_name):
             if contents[i] == contents[i - 1]:
                 window_size += 1
             else:
-                HR_pred_curr = prpsd(pulse_pred[i - window_size:i], fs, 40, 180)
+                HR_pred_curr = prpsd(pulse_pred[i - window_size:i], fs, 40, 140)
                 HR_predicted[i - window_size - 2:i - 1] = HR_pred_curr
                 window_size = 1
             if i == end - 1:
                 window_size += 1
-                HR_pred_curr = prpsd(pulse_pred[i - window_size:i], fs, 40, 180)
+                HR_pred_curr = prpsd(pulse_pred[i - window_size:i], fs, 40, 140)
                 HR_predicted[i - window_size - 2:i - 1] = HR_pred_curr
             HR_gt.append(float(contents[i]))
         HR_gt = np.array(HR_gt)
@@ -113,15 +115,15 @@ def predict_vitals(video_name):
     print("MAE: ", MAE)
     print("RMSE: ", RMSE)
     print("PC", PC)
-    return MAE, RMSE, PC
     ################## Plot ##################
     # plt.subplot(211)
-    # plt.plot(pulse_pred)
+    # plt.plot(HR_predicted)
     # plt.title('Pulse Prediction')
     # plt.subplot(212)
-    # plt.plot(resp_pred)
-    # plt.title('Resp Prediction')
+    # plt.plot(HR_gt)
+    # plt.title('Pulse Ground truth')
     # plt.show()
+    return MAE, RMSE, PC
 
 
 if __name__ == "__main__":
@@ -131,24 +133,25 @@ if __name__ == "__main__":
     # parser.add_argument('--batch_size', type=int, default=100, help='batch size (multiplier of 10)')
     # args = parser.parse_args()
 
-    dir_path = "../../Phase1_data/Videos/train-001_of_002"
+    dir_path = "../../Phase1_data/Videos/train-002_of_002"
     res = []
 
     for path in os.listdir(dir_path):
         if os.path.isfile(os.path.join(dir_path, path)):
             res.append(path)
-    print(res)
+    # print(res)
     num_video = len(res)
-
-    results = []
-    results.append(Parallel(n_jobs=-1)(delayed(predict_vitals)(video[0:-4])for video in res[0:50]))
+    results = [Parallel(n_jobs=-1)(delayed(predict_vitals)(video[0:-4]) for video in res[0:5])]
     results = np.array(results)
-    MAE = results[0,:,0]
+    MAE = results[0, :, 0]
     RMSE = results[0, :, 1]
     PC = results[0, :, 2]
-    print("MAE:",MAE)
-    print("RMSE:", RMSE)
-    print("PC:", PC)
+    # print("MAE:", MAE)
+    print("Average MAE:", mean(MAE))
+    # print("RMSE:", RMSE)
+    print("Average RMSE:", mean(RMSE))
+    # print("PC:", PC)
+    print("Average PC:", mean(PC))
     # for i in range(num_video):
     #     print("Current Video:", res[i])
     #     video_name = res[i][0:-4]
@@ -159,6 +162,10 @@ if __name__ == "__main__":
     # print("Average MAE for 001:", sum(MAE_array) / num_video)
     # print("Average RMSE for 001:", sum(RMSE_array) / num_video)
     # print("Average PC of 001:", sum(PC_array) / num_video)
-    # np.savetxt("../MAE_001_fc.txt", MAE_array, delimiter=" ")
-    # np.savetxt("../RMSE_001_fc.txt", RMSE_array, delimiter=" ")
-    # np.savetxt("../PC_001_fc.txt", RMSE_array, delimiter=" ")
+    fig, axs = plt.subplots(1, 1, figsize=(10, 7), tight_layout=True)
+    axs.hist(MAE, bins=5)
+    plt.show()
+
+    np.savetxt("../MAE_002_fc_opt.txt", MAE, delimiter=",")
+    np.savetxt("../RMSE_002_fc_opt.txt", RMSE, delimiter=",")
+    np.savetxt("../PC_002_fc_opt.txt", RMSE, delimiter=",")
