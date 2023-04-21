@@ -42,7 +42,7 @@ def preprocess_raw_video(videoFilePath, dim=36):
     rows, cols, _ = img.shape
     # print("Orignal Height", height)
     # print("Original width", width)
-    print("Total number of frames:", totalFrames)
+    # print("Total number of frames:", totalFrames)
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
     #########################################################################
@@ -62,6 +62,7 @@ def preprocess_raw_video(videoFilePath, dim=36):
         # img = resize_image(img, 300, width, height)
         # width, height, _ = img.shape
 
+        # Add black edge around each frame of picture
         width_edge = 300
         height_edge = height * (width_edge / width)
         original_cf = np.float32([[0, 0], [width - 1, 0], [(width - 1) / 2, height - 1]])
@@ -70,10 +71,9 @@ def preprocess_raw_video(videoFilePath, dim=36):
         matrix = cv2.getAffineTransform(original_cf, transed_cf)
         img = cv2.warpAffine(img, matrix, (cols, rows))
 
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        faces = face_cascade.detectMultiScale(gray, 1.3, 5)
-        roi = 0
-        # print(img.shape)
+        # Face detection in gray scale image
+        # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        faces = face_cascade.detectMultiScale(img, 1.3, 5)
 
         # if faces == ():
         #     print("WARNING")
@@ -81,26 +81,30 @@ def preprocess_raw_video(videoFilePath, dim=36):
         # else:
         #     for (x, y, w, h) in faces:
         #         roi = img_as_float(img[y - 200:y + w, x - 100:x + w + 100, :])
+
+        # Cropping out ROI from the original image based on the "1:1:1"ish face ratio
+        roi = 0
         for (x, y, w, h) in faces:
             roi = img_as_float(img[int(y - 0.25 * h):int(y + 1.05 * h), int(x - 0.15 * w):int(x + 1.15 * w), :])
 
+        # Original resizing from MTTS_CAN
         vidLxL = cv2.resize(roi, (dim, dim), interpolation=cv2.INTER_AREA)
+        # 11111
         vidLxL = cv2.rotate(vidLxL, cv2.ROTATE_90_CLOCKWISE)  # rotate 90 degree
 
         vidLxL = cv2.cvtColor(vidLxL.astype('float32'), cv2.COLOR_BGR2RGB)
-        # vidLxL = cv2.cvtColor(vidLxL, cv2.COLOR_BGR2RGB)
 
         vidLxL[vidLxL > 1] = 1
         vidLxL[vidLxL < (1 / 255)] = 1 / 255
         Xsub[i, :, :, :] = vidLxL
-        # Xsub[i, :, :, :] = vidLxL / 255.0
 
         success, img = vidObj.read()  # read the next one
         i = i + 1
 
-    # n = random.randint(0, i)
-    # plt.imshow(Xsub[n])
-    # plt.show()
+    # Show a random frame of ROI/Facial Area
+    n = random.randint(0, i)
+    plt.imshow(Xsub[n])
+    plt.show()
 
     #########################################################################
     # Normalized Frames in the motion branch
