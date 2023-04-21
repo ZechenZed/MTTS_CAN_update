@@ -37,7 +37,7 @@ def prpsd(BVP, FS, LL_PR, UL_PR):
     """
 
     Nyquist = FS / 2
-    FResBPM = 0.5  # resolution (bpm) of bins in power spectrum used to determine PR and SNR
+    FResBPM = 10  # resolution (bpm) of bins in power spectrum used to determine PR and SNR
     N = int((60 * 2 * Nyquist) / FResBPM)
 
     # Construct Periodogram
@@ -59,23 +59,23 @@ def predict_vitals(video_name):
     img_cols = 36
     frame_depth = 10
     model_checkpoint = "../mtts_can.hdf5"
-    batch_size = 100
+    batch_size = 10
     fs = 25
-    sample_data_path = " ../../Phase1_data/Videos/train-001_of_002/" + video_name + ".mkv"
+
+    # sample_data_path = " ../../Phase1_data/Videos/train-001_of_002/" + video_name + ".mkv"
+    sample_data_path = " ../../Phase2_data/Videos/Test/" + video_name + ".mkv"
 
     dXsub = preprocess_raw_video(sample_data_path, dim=36)
-    # print('dXsub shape', dXsub.shape)
-
     dXsub_len = (dXsub.shape[0] // frame_depth) * frame_depth
     dXsub = dXsub[:dXsub_len, :, :, :]
 
     model = MTTS_CAN(frame_depth, 32, 64, (img_rows, img_cols, 3))
     model.load_weights(model_checkpoint)
-
     yptest = model.predict((dXsub[:, :, :, :3], dXsub[:, :, :, -3:]), batch_size=batch_size, verbose=1)
 
     pulse_pred = yptest[0]
     pulse_pred = detrend(np.cumsum(pulse_pred), 100)
+    # bandpass filter with range of [0.7, 2.5]
     [b_pulse, a_pulse] = butter(1, [0.75 / fs * 2, 2.5 / fs * 2], btype='bandpass')
     pulse_pred = scipy.signal.filtfilt(b_pulse, a_pulse, np.double(pulse_pred))
 
@@ -86,32 +86,59 @@ def predict_vitals(video_name):
 
     # Read the ground truth file and using sliding window to calculate the difference
     HR_predicted = np.ones(dXsub_len)
+    # print("Number of predicted frame", dXsub_len)
 
-    with open("../../Phase1_data/Ground_truth/Physiology/" + video_name + ".txt") as f:
+    # with open("../../Phase1_data/Ground_truth/Physiology/" + video_name + ".txt") as f:
+    #     contents = f.read()
+    #     contents = contents.split(", ")
+    #     indices = [i for i, s in enumerate(contents) if video_name + ".mkv" in s]
+    #     start = 2
+    #     end = start + dXsub_len
+    #     print('Number of ground truth frame:', end - start)
+    #     window_size = 1
+    #     HR_gt = [float(contents[start])]
+    #
+    #     for i in range(start+1, end):
+    #         if contents[i] == contents[i - 1]:
+    #             window_size += 1
+    #         else:
+    #             HR_pred_curr = prpsd(pulse_pred[i - window_size:i], fs, 40, 140)
+    #             HR_predicted[i - window_size - 2:i - 1] = HR_pred_curr
+    #             window_size = 1
+    #         if i == end - 1:
+    #             window_size += 1
+    #             HR_pred_curr = prpsd(pulse_pred[i - window_size:i], fs, 40, 140)
+    #             HR_predicted[i - window_size - 2:i - 1] = HR_pred_curr
+    #         HR_gt.append(float(contents[i][0:4]))
+    #     HR_gt = np.array(HR_gt)
+
+    with open("../../Phase2_data/test_set_gt_release.txt") as f:
         contents = f.read()
         contents = contents.split(", ")
-        start = 2
+        indices = [i for i, s in enumerate(contents) if video_name + ".mkv" in s]
+        start = indices[0] + 2
         end = start + dXsub_len
-        print('Total number of continuous ground truth frame:', end - start)
+        # print('Number of ground truth frame:', end - start)
         window_size = 1
         HR_gt = [float(contents[start])]
-        for i in range(start + 1, end):
-            if contents[i] == contents[i - 1]:
+        length = end - start
+        for i in range(1, length):
+            if contents[i + start] == contents[i + start - 1]:
                 window_size += 1
             else:
                 HR_pred_curr = prpsd(pulse_pred[i - window_size:i], fs, 40, 140)
                 HR_predicted[i - window_size - 2:i - 1] = HR_pred_curr
                 window_size = 1
-            if i == end - 1:
+            if i == length - 1:
                 window_size += 1
                 HR_pred_curr = prpsd(pulse_pred[i - window_size:i], fs, 40, 140)
                 HR_predicted[i - window_size - 2:i - 1] = HR_pred_curr
-            HR_gt.append(float(contents[i]))
+            HR_gt.append(float(contents[i + start][0:4]))
         HR_gt = np.array(HR_gt)
 
     PC, _ = pearsonr(HR_gt, HR_predicted)
     MAE = sum(abs(HR_predicted - HR_gt)) / dXsub_len
-    RMSE = np.sqrt(sum(abs(HR_predicted - HR_gt) ** 2) / dXsub_len)
+    RMSE = np.sqrt(sum((abs(HR_predicted - HR_gt)) ** 2) / dXsub_len)
     print("MAE: ", MAE)
     print("RMSE: ", RMSE)
     print("PC", PC)
@@ -133,35 +160,30 @@ if __name__ == "__main__":
     # parser.add_argument('--batch_size', type=int, default=100, help='batch size (multiplier of 10)')
     # args = parser.parse_args()
 
-    dir_path = "../../Phase1_data/Videos/train-001_of_002"
-    res = []
+    # dir_path = "../../Phase1_data/Videos/train-001_of_002"
+    dir_path = "../../Phase2_data/Videos/Test"
 
+    res = []
     for path in os.listdir(dir_path):
         if os.path.isfile(os.path.join(dir_path, path)):
             res.append(path)
-    # print(res)
     num_video = len(res)
-    results = [Parallel(n_jobs=-1)(delayed(predict_vitals)(video[0:-4]) for video in res)]
-    results = np.array(results)
-    MAE = results[0, :, 0]
-    RMSE = results[0, :, 1]
-    PC = results[0, :, 2]
-    # print("MAE:", MAE)
-    print("Average MAE:", mean(MAE))
-    # print("RMSE:", RMSE)
-    print("Average RMSE:", mean(RMSE))
-    # print("PC:", PC)
-    print("Average PC:", mean(PC))
-    # for i in range(num_video):
-    #     print("Current Video:", res[i])
-    #     video_name = res[i][0:-4]
-    #     MAE, RMSE, PC = predict_vitals(video_name)
-    #     MAE_array[i] = MAE
-    #     RMSE_array[i] = RMSE
-    #     PC_array[i] = PC
-    # print("Average MAE for 001:", sum(MAE_array) / num_video)
-    # print("Average RMSE for 001:", sum(RMSE_array) / num_video)
-    # print("Average PC of 001:", sum(PC_array) / num_video)
+
+    # results = [Parallel(n_jobs=-1)(delayed(predict_vitals)(video[0:-4]) for video in res[0:50])]
+    # results = np.array(results)
+    # MAE = results[0, :, 0]
+    # RMSE = results[0, :, 1]
+    # PC = results[0, :, 2]
+    # print("Average MAE:", mean(MAE))
+    # print("Average RMSE:", mean(RMSE))
+    # print("Average PC:", mean(PC))
+
+    for i in range(num_video):
+        print("Current Video:", res[i])
+        video_name = res[i][0:-4]
+        MAE, RMSE, PC = predict_vitals(video_name)
+
+
     fig1, axs1 = plt.subplots(3, 1, figsize=(10, 7), tight_layout=True)
     axs1[0].hist(MAE, bins=10)
     axs1[0].title.set_text("MAE")
@@ -171,6 +193,6 @@ if __name__ == "__main__":
     axs1[2].title.set_text("PC")
     plt.show()
 
-    np.savetxt("../Error/MAE_001_fc_opt.txt", MAE, delimiter=",")
-    np.savetxt("../Error/RMSE_001_fc_opt.txt", RMSE, delimiter=",")
-    np.savetxt("../Error/PC_001_fc_opt.txt", RMSE, delimiter=",")
+    # np.savetxt("../Error/MAE_001_fc_opt.txt", MAE, delimiter=",")
+    # np.savetxt("../Error/RMSE_001_fc_opt.txt", RMSE, delimiter=",")
+    # np.savetxt("../Error/PC_001_fc_opt.txt", RMSE, delimiter=",")

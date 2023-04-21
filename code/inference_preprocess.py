@@ -9,24 +9,24 @@ import time
 import scipy.io
 from scipy.sparse import spdiags
 
-
-def resize_image(img, h_new, w_old, h_old):
-    "I believe reszing image before face detection will speed up"
-    r = h_new / float(h_old)
-    dim = (int(w_old * r), h_new)
-    resized = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
-    return resized
-
-
-def non_skin_remove(patches):
-    patches_hsv = [cv2.cvtColor(i, cv2.COLOR_RGB2HSV) for i in patches]
-    lower = np.array([0, 48, 80], dtype="uint8")
-    upper = np.array([20, 255, 255], dtype="uint8")
-    skinMask = [cv2.inRange(i, lower, upper) for i in patches_hsv]
-    skinindex = [i for i, j in enumerate(skinMask) if j.sum() > 5]
-    patches = [patches[i] for i in skinindex]
-    return patches
-
+#
+# def resize_image(img, h_new, w_old, h_old):
+#     "I believe reszing image before face detection will speed up"
+#     r = h_new / float(h_old)
+#     dim = (int(w_old * r), h_new)
+#     resized = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
+#     return resized
+#
+#
+# def non_skin_remove(patches):
+#     patches_hsv = [cv2.cvtColor(i, cv2.COLOR_RGB2HSV) for i in patches]
+#     lower = np.array([0, 48, 80], dtype="uint8")
+#     upper = np.array([20, 255, 255], dtype="uint8")
+#     skinMask = [cv2.inRange(i, lower, upper) for i in patches_hsv]
+#     skinindex = [i for i, j in enumerate(skinMask) if j.sum() > 5]
+#     patches = [patches[i] for i in skinindex]
+#     return patches
+#
 
 def preprocess_raw_video(videoFilePath, dim=36):
     #########################################################################
@@ -40,10 +40,9 @@ def preprocess_raw_video(videoFilePath, dim=36):
     width = vidObj.get(cv2.CAP_PROP_FRAME_WIDTH)
     success, img = vidObj.read()
     rows, cols, _ = img.shape
-    # print("image shape",img.shape)
     # print("Orignal Height", height)
     # print("Original width", width)
-    # print("Total number of frames:", totalFrames)
+    print("Total number of frames:", totalFrames)
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
     #########################################################################
@@ -83,7 +82,7 @@ def preprocess_raw_video(videoFilePath, dim=36):
         #     for (x, y, w, h) in faces:
         #         roi = img_as_float(img[y - 200:y + w, x - 100:x + w + 100, :])
         for (x, y, w, h) in faces:
-            roi = img_as_float(img[int(y - 0.25*h):int(y + 1.05*h), int(x - 0.15*w):int(x + 1.15*w), :])
+            roi = img_as_float(img[int(y - 0.25 * h):int(y + 1.05 * h), int(x - 0.15 * w):int(x + 1.15 * w), :])
 
         vidLxL = cv2.resize(roi, (dim, dim), interpolation=cv2.INTER_AREA)
         vidLxL = cv2.rotate(vidLxL, cv2.ROTATE_90_CLOCKWISE)  # rotate 90 degree
@@ -99,7 +98,7 @@ def preprocess_raw_video(videoFilePath, dim=36):
         success, img = vidObj.read()  # read the next one
         i = i + 1
 
-    # n = random.randint(0,i)
+    # n = random.randint(0, i)
     # plt.imshow(Xsub[n])
     # plt.show()
 
