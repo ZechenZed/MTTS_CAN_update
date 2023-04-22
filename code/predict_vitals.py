@@ -9,6 +9,7 @@ import os
 import csv
 import pandas as pd
 from scipy.stats import pearsonr
+from numba import cuda, jit , cuda, uint32, f8, uint8
 
 sys.path.append('../')
 from model import Attention_mask, MTTS_CAN, TS_CAN
@@ -37,7 +38,7 @@ def prpsd(BVP, FS, LL_PR, UL_PR):
     """
 
     Nyquist = FS / 2
-    FResBPM = 1.30  # resolution (bpm) of bins in power spectrum used to determine PR and SNR
+    FResBPM = 1.81  # resolution (bpm) of bins in power spectrum used to determine PR and SNR
     N = int((60 * 2 * Nyquist) / FResBPM)
 
     # Construct Periodogram
@@ -62,7 +63,7 @@ def predict_vitals(video_name):
     batch_size = 10
     fs = 25
 
-    sample_data_path = " ../../Phase1_data/Videos/train-001_of_002/" + video_name + ".mkv"
+    sample_data_path = " ../../Phase1_data/Videos/train/" + video_name + ".mkv"
     # sample_data_path = " ../../Phase2_data/Videos/Test/" + video_name + ".mkv"
 
     dXsub = preprocess_raw_video(sample_data_path, dim=36)
@@ -98,7 +99,7 @@ def predict_vitals(video_name):
         window_size = 1
         HR_gt = [float(contents[start])]
 
-        for i in range(start+1, end):
+        for i in range(start + 1, end):
             if contents[i] == contents[i - 1]:
                 window_size += 1
             else:
@@ -160,7 +161,7 @@ if __name__ == "__main__":
     # parser.add_argument('--batch_size', type=int, default=100, help='batch size (multiplier of 10)')
     # args = parser.parse_args()
 
-    dir_path = "../../Phase1_data/Videos/train-001_of_002"
+    dir_path = "../../Phase1_data/Videos/train"
     # dir_path = "../../Phase2_data/Videos/Test"
 
     res = []
@@ -169,30 +170,29 @@ if __name__ == "__main__":
             res.append(path)
     num_video = len(res)
 
-    # results = [Parallel(n_jobs=3)(delayed(predict_vitals)(video[0:-4]) for video in res[0:50])]
-    # results = np.array(results)
-    # MAE = results[0, :, 0]
-    # RMSE = results[0, :, 1]
-    # PC = results[0, :, 2]
-    # print("Average MAE:", mean(MAE))
-    # print("Average RMSE:", mean(RMSE))
-    # print("Average PC:", mean(PC))
+    results = [Parallel(n_jobs=2)(delayed(predict_vitals)(video[0:-4]) for video in res)]
+    results = np.array(results)
+    MAE = results[0, :, 0]
+    RMSE = results[0, :, 1]
+    PC = results[0, :, 2]
+    print("Average MAE:", mean(MAE))
+    print("Average RMSE:", mean(RMSE))
+    print("Average PC:", mean(PC))
 
-    for i in range(num_video):
-        print("Current Video:", res[i])
-        video_name = res[i][0:-4]
-        MAE, RMSE, PC = predict_vitals(video_name)
-
+    # for i in range(num_video):
+    #     print("Current Video:", res[i])
+    #     video_name = res[i][0:-4]
+    #     MAE, RMSE, PC = predict_vitals(video_name)
 
     fig1, axs1 = plt.subplots(3, 1, figsize=(10, 7), tight_layout=True)
-    axs1[0].hist(MAE, bins=10)
+    axs1[0].hist(MAE, bins=20)
     axs1[0].title.set_text("MAE")
-    axs1[1].hist(RMSE, bins=10)
+    axs1[1].hist(RMSE, bins=20)
     axs1[1].title.set_text("RMSE")
-    axs1[2].hist(RMSE, bins=10)
+    axs1[2].hist(RMSE, bins=20)
     axs1[2].title.set_text("PC")
     plt.show()
 
-    # np.savetxt("../Error/MAE_001_fc_opt.txt", MAE, delimiter=",")
-    # np.savetxt("../Error/RMSE_001_fc_opt.txt", RMSE, delimiter=",")
-    # np.savetxt("../Error/PC_001_fc_opt.txt", RMSE, delimiter=",")
+    np.savetxt("../Error/MAE_ratio.txt", MAE, delimiter=",")
+    np.savetxt("../Error/RMSE_ratio.txt", RMSE, delimiter=",")
+    np.savetxt("../Error/PC_ratio.txt", RMSE, delimiter=",")
