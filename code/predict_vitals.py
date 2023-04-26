@@ -9,7 +9,7 @@ import os
 import csv
 import pandas as pd
 from scipy.stats import pearsonr
-from numba import cuda, jit , cuda, uint32, f8, uint8
+# from numba import cuda, jit , cuda, uint32, f8, uint8
 
 sys.path.append('../')
 from model import Attention_mask, MTTS_CAN, TS_CAN
@@ -38,7 +38,7 @@ def prpsd(BVP, FS, LL_PR, UL_PR):
     """
 
     Nyquist = FS / 2
-    FResBPM = 1.81  # resolution (bpm) of bins in power spectrum used to determine PR and SNR
+    FResBPM = 1.5  # resolution (bpm) of bins in power spectrum used to determine PR and SNR
     N = int((60 * 2 * Nyquist) / FResBPM)
 
     # Construct Periodogram
@@ -92,7 +92,6 @@ def predict_vitals(video_name):
     with open("../../Phase1_data/Ground_truth/Physiology/" + video_name + ".txt") as f:
         contents = f.read()
         contents = contents.split(", ")
-        indices = [i for i, s in enumerate(contents) if video_name + ".mkv" in s]
         start = 2
         end = start + dXsub_len
         print('Number of ground truth frame:', end - start)
@@ -103,12 +102,17 @@ def predict_vitals(video_name):
             if contents[i] == contents[i - 1]:
                 window_size += 1
             else:
-                HR_pred_curr = prpsd(pulse_pred[i - window_size:i], fs, 40, 140)
-                HR_predicted[i - window_size - 2:i - 1] = HR_pred_curr
+                if HR_predicted[0] == 1.0:
+                    HR_pred_curr = prpsd(pulse_pred[i - window_size:i], fs, 40, 140)
+                    HR_predicted[i - window_size - 2:i - 1] = HR_pred_curr
+                else:
+                    pre_HR = HR_predicted[i-window_size-3]
+                    HR_pred_curr = prpsd(pulse_pred[i - window_size:i], fs, pre_HR-15, pre_HR+15)
+                    HR_predicted[i - window_size - 2:i - 1] = HR_pred_curr
                 window_size = 1
             if i == end - 1:
                 window_size += 1
-                HR_pred_curr = prpsd(pulse_pred[i - window_size:i], fs, 40, 140)
+                HR_pred_curr = prpsd(pulse_pred[i - window_size:i], fs, pre_HR - 15, pre_HR + 15)
                 HR_predicted[i - window_size - 2:i - 1] = HR_pred_curr
             HR_gt.append(float(contents[i][0:4]))
         HR_gt = np.array(HR_gt)
@@ -170,7 +174,7 @@ if __name__ == "__main__":
             res.append(path)
     num_video = len(res)
 
-    results = [Parallel(n_jobs=2)(delayed(predict_vitals)(video[0:-4]) for video in res)]
+    results = [Parallel(n_jobs=-1)(delayed(predict_vitals)(video[0:-4]) for video in res[0:50])]
     results = np.array(results)
     MAE = results[0, :, 0]
     RMSE = results[0, :, 1]
@@ -193,6 +197,6 @@ if __name__ == "__main__":
     axs1[2].title.set_text("PC")
     plt.show()
 
-    np.savetxt("../Error/MAE_ratio.txt", MAE, delimiter=",")
-    np.savetxt("../Error/RMSE_ratio.txt", RMSE, delimiter=",")
-    np.savetxt("../Error/PC_ratio.txt", RMSE, delimiter=",")
+    # np.savetxt("../Error/MAE_ratio.txt", MAE, delimiter=",")
+    # np.savetxt("../Error/RMSE_ratio.txt", RMSE, delimiter=",")
+    # np.savetxt("../Error/PC_ratio.txt", RMSE, delimiter=",")

@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import time
 import scipy.io
 from scipy.sparse import spdiags
-from numba import jit
+# from numba import jit
 #
 # def resize_image(img, h_new, w_old, h_old):
 #     "I believe reszing image before face detection will speed up"
@@ -50,15 +50,15 @@ def preprocess_raw_video(videoFilePath, dim=36):
     while success:
         t.append(vidObj.get(cv2.CAP_PROP_POS_MSEC))  # current timestamp in milisecond
 
-        ## Original From MTTS_CAN
+        # # Original From MTTS_CAN
         # vidLxL = cv2.resize(
         #     img_as_float(img[:, int(width / 2) - int(height / 2 + 1):int(height / 2) + int(width / 2), :]), (dim, dim),
         #     interpolation=cv2.INTER_AREA)
 
-        ## Experimental
+        # # Experimental
         # vidLxL = cv2.resize(img_as_float(img[200:1240, :, :]), (dim, dim), interpolation=cv2.INTER_AREA)
 
-        ## Without considering the ratio
+        # Without considering the ratio
         vidLxL = cv2.resize(img_as_float(img[:, :, :]), (dim, dim), interpolation=cv2.INTER_AREA)
 
         # # Face cropping
@@ -85,8 +85,6 @@ def preprocess_raw_video(videoFilePath, dim=36):
 
         vidLxL = cv2.rotate(vidLxL, cv2.ROTATE_90_CLOCKWISE)  # rotate 90 degree
         vidLxL = cv2.cvtColor(vidLxL.astype('float32'), cv2.COLOR_BGR2RGB)
-
-
         vidLxL[vidLxL > 1] = 1
         vidLxL[vidLxL < (1 / 255)] = 1 / 255
         Xsub[i, :, :, :] = vidLxL
