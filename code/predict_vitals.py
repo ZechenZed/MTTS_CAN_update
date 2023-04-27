@@ -9,6 +9,8 @@ import os
 import csv
 import pandas as pd
 from scipy.stats import pearsonr
+import json
+
 # from numba import cuda, jit , cuda, uint32, f8, uint8
 
 sys.path.append('../')
@@ -38,7 +40,7 @@ def prpsd(BVP, FS, LL_PR, UL_PR):
     """
 
     Nyquist = FS / 2
-    FResBPM = 1.5  # resolution (bpm) of bins in power spectrum used to determine PR and SNR
+    FResBPM = 1.30  # resolution (bpm) of bins in power spectrum used to determine PR and SNR
     N = int((60 * 2 * Nyquist) / FResBPM)
 
     # Construct Periodogram
@@ -62,7 +64,9 @@ def predict_vitals(video_name):
     model_checkpoint = "../mtts_can.hdf5"
     batch_size = 10
     fs = 25
+    max_hr_change = 100 / 60
 
+    # sample_data_path = " ../../data/" + video_name + ".mkv"
     sample_data_path = " ../../Phase1_data/Videos/train/" + video_name + ".mkv"
     # sample_data_path = " ../../Phase2_data/Videos/Test/" + video_name + ".mkv"
 
@@ -85,35 +89,57 @@ def predict_vitals(video_name):
     # [b_resp, a_resp] = butter(1, [0.08 / fs * 2, 0.5 / fs * 2], btype='bandpass')
     # resp_pred = scipy.signal.filtfilt(b_resp, a_resp, np.double(resp_pred))
 
-    # Read the ground truth file and using sliding window to calculate the difference
     HR_predicted = np.ones(dXsub_len)
-    # print("Number of predicted frame", dXsub_len)
+    # print("Number of predicted frame:", dXsub_len)
+    # # PURE dataset
+    # f = open('../../PURE/08-01/08-01.json')
+    # data = json.load(f)
+    # HR_gt = []
+    # for i in data['/FullPackage']:
+    #     info_keys = i["Value"]
+    #     HR_gt.append(info_keys["pulseRate"])
+    #
+    # f.close()
+    # # Iterating through the json
+    # # list
+    # HR_gt = []
+    # for i in data['/FullPackage']:
+    #     info_keys = i["Value"]
+    #     HR_gt.append(info_keys["pulseRate"])
+    #
+    # print(len(HR_gt))
+    # HR_gt = HR_gt[0:dXsub_len]
+    # # Customized test
+    # for i in range(0, dXsub_len, 15):
+    #     if i == 0:
+    #         HR_pred_curr = prpsd(pulse_pred[i:i + 30], fs, 40, 140)
+    #         HR_predicted[i:i + 15] = HR_pred_curr
+    #     else:
+    #         pre_HR = HR_predicted[i - 16]
+    #         HR_pred_curr = prpsd(pulse_pred[i:i + 30], fs, 40, 140)
+    #         HR_predicted[i:i + 15] = HR_pred_curr
+    #
+    # plt.plot(HR_predicted)
+    # plt.title('Pulse Prediction')
+    # plt.show()
 
     with open("../../Phase1_data/Ground_truth/Physiology/" + video_name + ".txt") as f:
         contents = f.read()
         contents = contents.split(", ")
         start = 2
         end = start + dXsub_len
-        print('Number of ground truth frame:', end - start)
+        # print('Number of ground truth frame:', end - start)
         window_size = 1
         HR_gt = [float(contents[start])]
-
         for i in range(start + 1, end):
             if contents[i] == contents[i - 1]:
                 window_size += 1
             else:
-                if HR_predicted[0] == 1.0:
-                    HR_pred_curr = prpsd(pulse_pred[i - window_size:i], fs, 40, 140)
-                    HR_predicted[i - window_size - 2:i - 1] = HR_pred_curr
-                else:
-                    pre_HR = HR_predicted[i-window_size-3]
-                    HR_pred_curr = prpsd(pulse_pred[i - window_size:i], fs, pre_HR-15, pre_HR+15)
-                    HR_predicted[i - window_size - 2:i - 1] = HR_pred_curr
-                window_size = 1
-            if i == end - 1:
-                window_size += 1
-                HR_pred_curr = prpsd(pulse_pred[i - window_size:i], fs, pre_HR - 15, pre_HR + 15)
+                if i == end - 1:
+                    window_size += 1
+                HR_pred_curr = prpsd(pulse_pred[i - window_size:i], fs, 40, 140)
                 HR_predicted[i - window_size - 2:i - 1] = HR_pred_curr
+                window_size = 1
             HR_gt.append(float(contents[i][0:4]))
         HR_gt = np.array(HR_gt)
 
@@ -141,13 +167,14 @@ def predict_vitals(video_name):
     #         HR_gt.append(float(contents[i + start][0:4]))
     #     HR_gt = np.array(HR_gt)
 
-    PC, _ = pearsonr(HR_gt, HR_predicted)
     MAE = sum(abs(HR_predicted - HR_gt)) / dXsub_len
     RMSE = np.sqrt(sum((abs(HR_predicted - HR_gt)) ** 2) / dXsub_len)
+    PC, _ = pearsonr(HR_gt, HR_predicted)
+    if MAE >= 25: print("Attention Video:", video_name)
     print("MAE: ", MAE)
     print("RMSE: ", RMSE)
     print("PC", PC)
-    ################## Plot ##################
+    ################# Plot ##################
     # plt.subplot(211)
     # plt.plot(HR_predicted)
     # plt.title('Pulse Prediction')
@@ -165,6 +192,7 @@ if __name__ == "__main__":
     # parser.add_argument('--batch_size', type=int, default=100, help='batch size (multiplier of 10)')
     # args = parser.parse_args()
 
+    # dir_path = "../../data"
     dir_path = "../../Phase1_data/Videos/train"
     # dir_path = "../../Phase2_data/Videos/Test"
 
@@ -188,6 +216,8 @@ if __name__ == "__main__":
     #     video_name = res[i][0:-4]
     #     MAE, RMSE, PC = predict_vitals(video_name)
 
+    # video_name = predict_vitals(res[0][0:-4])
+    #
     fig1, axs1 = plt.subplots(3, 1, figsize=(10, 7), tight_layout=True)
     axs1[0].hist(MAE, bins=20)
     axs1[0].title.set_text("MAE")
