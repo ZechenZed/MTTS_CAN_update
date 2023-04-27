@@ -466,28 +466,28 @@ class HeartBeat(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
         print('PROGRESS: 0.00%')
 
-
-if __name__ == '__main__':
-    img_rows = 36
-    img_cols = 36
-    frame_depth = 10
-    model_checkpoint = './mtts_can.hdf5'
-    batch_size = 100
-    fs = 25
-    sample_data_path = ""
-
-    dXsub = preprocess_raw_video(sample_data_path, dim=36)
-    print('dXsub shape', dXsub.shape)
-
-    dXsub_len = (dXsub.shape[0] // frame_depth)  * frame_depth
-    dXsub = dXsub[:dXsub_len, :, :, :]
-
-    model = MTTS_CAN(frame_depth, 32, 64, (img_rows, img_cols, 3))
-    model.load_weights(model_checkpoint)
-
-    yptest = model.predict((dXsub[:, :, :, :3], dXsub[:, :, :, -3:]), batch_size=batch_size, verbose=1)
-
-    for ftr in yptest:
-        fig = plt.figure(figsize=(12, 12))
-        plt.imshow(ftr[0, :, :, i - 1], cmap='gray')
-        plt.show()
+#
+# if __name__ == '__main__':
+#     img_rows = 36
+#     img_cols = 36
+#     frame_depth = 10
+#     model_checkpoint = './mtts_can.hdf5'
+#     batch_size = 100
+#     fs = 25
+#     sample_data_path = ""
+#
+#     dXsub = preprocess_raw_video(sample_data_path, dim=36)
+#     print('dXsub shape', dXsub.shape)
+#
+#     dXsub_len = (dXsub.shape[0] // frame_depth)  * frame_depth
+#     dXsub = dXsub[:dXsub_len, :, :, :]
+#
+#     model = MTTS_CAN(frame_depth, 32, 64, (img_rows, img_cols, 3))
+#     model.load_weights(model_checkpoint)
+#
+#     yptest = model.predict((dXsub[:, :, :, :3], dXsub[:, :, :, -3:]), batch_size=batch_size, verbose=1)
+#
+#     for ftr in yptest:
+#         fig = plt.figure(figsize=(12, 12))
+#         plt.imshow(ftr[0, :, :, i - 1], cmap='gray')
+#         plt.show()

@@ -60,6 +60,7 @@ def preprocess_raw_video(videoFilePath, dim=36):
 
         # Without considering the ratio
         vidLxL = cv2.resize(img_as_float(img[:, :, :]), (dim, dim), interpolation=cv2.INTER_AREA)
+        # vidLxL = cv2.resize(img_as_float(img[:, :]), (dim, dim), interpolation=cv2.INTER_AREA)
 
         # # Face cropping
         # # Add black edge around each frame of picture
@@ -70,7 +71,7 @@ def preprocess_raw_video(videoFilePath, dim=36):
         #                          [(width - 1) / 2, height - height_edge - 1]])
         # matrix = cv2.getAffineTransform(original_cf, transed_cf)
         # img = cv2.warpAffine(img, matrix, (cols, rows))
-        #
+        # #
         # # Face detection in gray scale image
         # # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         # faces = face_cascade.detectMultiScale(img, 1.3, 5)

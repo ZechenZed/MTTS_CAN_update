@@ -40,7 +40,7 @@ def prpsd(BVP, FS, LL_PR, UL_PR):
     """
 
     Nyquist = FS / 2
-    FResBPM = 1.30  # resolution (bpm) of bins in power spectrum used to determine PR and SNR
+    FResBPM = 0.5  # resolution (bpm) of bins in power spectrum used to determine PR and SNR
     N = int((60 * 2 * Nyquist) / FResBPM)
 
     # Construct Periodogram
@@ -64,7 +64,6 @@ def predict_vitals(video_name):
     model_checkpoint = "../mtts_can.hdf5"
     batch_size = 10
     fs = 25
-    max_hr_change = 100 / 60
 
     # sample_data_path = " ../../data/" + video_name + ".mkv"
     sample_data_path = " ../../Phase1_data/Videos/train/" + video_name + ".mkv"
@@ -72,6 +71,7 @@ def predict_vitals(video_name):
 
     dXsub = preprocess_raw_video(sample_data_path, dim=36)
     dXsub_len = (dXsub.shape[0] // frame_depth) * frame_depth
+    # print("Number of predicted frame:", dXsub_len)
     dXsub = dXsub[:dXsub_len, :, :, :]
 
     model = MTTS_CAN(frame_depth, 32, 64, (img_rows, img_cols, 3))
@@ -83,14 +83,13 @@ def predict_vitals(video_name):
     # bandpass filter with range of [0.7, 2.5]
     [b_pulse, a_pulse] = butter(1, [0.75 / fs * 2, 2.5 / fs * 2], btype='bandpass')
     pulse_pred = scipy.signal.filtfilt(b_pulse, a_pulse, np.double(pulse_pred))
+    HR_predicted = np.ones(dXsub_len)
 
     # resp_pred = yptest[1]
     # resp_pred = detrend(np.cumsum(resp_pred), 100)
     # [b_resp, a_resp] = butter(1, [0.08 / fs * 2, 0.5 / fs * 2], btype='bandpass')
     # resp_pred = scipy.signal.filtfilt(b_resp, a_resp, np.double(resp_pred))
 
-    HR_predicted = np.ones(dXsub_len)
-    # print("Number of predicted frame:", dXsub_len)
     # # PURE dataset
     # f = open('../../PURE/08-01/08-01.json')
     # data = json.load(f)
@@ -129,19 +128,58 @@ def predict_vitals(video_name):
         start = 2
         end = start + dXsub_len
         # print('Number of ground truth frame:', end - start)
-        window_size = 1
         HR_gt = [float(contents[start])]
+
+        window_size = 1
         for i in range(start + 1, end):
             if contents[i] == contents[i - 1]:
                 window_size += 1
             else:
-                if i == end - 1:
-                    window_size += 1
-                HR_pred_curr = prpsd(pulse_pred[i - window_size:i], fs, 40, 140)
-                HR_predicted[i - window_size - 2:i - 1] = HR_pred_curr
+                print(window_size)
+                if HR_predicted[0] == 1.0:
+                    HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 60, 140)
+                else:
+                    pre_HR = HR_predicted[i - window_size - 3]
+                    HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, max(60, pre_HR - 10),
+                                         min(pre_HR + 10, 140))
+                HR_predicted[i - window_size - 2:i - 2] = HR_pred_curr
                 window_size = 1
+            if i == end - 1:
+                window_size += 1
+                pre_HR = HR_predicted[i - window_size - 3]
+                HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, max(60, pre_HR - 10),
+                                     min(pre_HR + 10, 140))
+                HR_predicted[i - window_size - 2:i + 1] = HR_pred_curr
             HR_gt.append(float(contents[i][0:4]))
         HR_gt = np.array(HR_gt)
+
+    #     window_size = 0
+    #     avg_HR_pred = prpsd(pulse_pred, fs, 60, 140)
+    #
+    #     for i in range(start + 1, end):
+    #         window_size += 1
+    #         if window_size == 15:
+    #             if HR_predicted[0] == 1.0:
+    #                 HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, max(60, avg_HR_pred - 10),
+    #                                      min(avg_HR_pred + 10, 140))
+    #             else:
+    #                 pre_HR = HR_predicted[i - window_size - 3]
+    #                 HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, max(60, pre_HR - 10),
+    #                                      min(pre_HR + 10, 140))
+    #             HR_predicted[i - window_size - 2:i - 2] = HR_pred_curr
+    #             window_size = 0
+    #         if i == end - 1:
+    #             window_size += 1
+    #             pre_HR = HR_predicted[i - window_size - 3]
+    #             HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, max(60, pre_HR - 10),
+    #                                  min(pre_HR + 10, 140))
+    #             HR_predicted[i - window_size - 2:i + 1] = HR_pred_curr
+    #         HR_gt.append(float(contents[i][0:4]))
+    #     HR_gt = np.array(HR_gt)
+    #
+    # plt.plot(HR_predicted, "b")
+    # plt.plot(HR_gt, "r")
+    # plt.show()
 
     # with open("../../Phase2_data/test_set_gt_release.txt") as f:
     #     contents = f.read()
@@ -154,26 +192,24 @@ def predict_vitals(video_name):
     #     HR_gt = [float(contents[start])]
     #     length = end - start
     #     for i in range(1, length):
-    #         if contents[i + start] == contents[i + start - 1]:
+    #         if contents[i] == contents[i - 1]:
     #             window_size += 1
     #         else:
+    #             if i == end - 1:
+    #                 window_size += 1
     #             HR_pred_curr = prpsd(pulse_pred[i - window_size:i], fs, 40, 140)
     #             HR_predicted[i - window_size - 2:i - 1] = HR_pred_curr
     #             window_size = 1
-    #         if i == length - 1:
-    #             window_size += 1
-    #             HR_pred_curr = prpsd(pulse_pred[i - window_size:i], fs, 40, 140)
-    #             HR_predicted[i - window_size - 2:i - 1] = HR_pred_curr
-    #         HR_gt.append(float(contents[i + start][0:4]))
+    #         HR_gt.append(float(contents[i][0:4]))
     #     HR_gt = np.array(HR_gt)
 
-    MAE = sum(abs(HR_predicted - HR_gt)) / dXsub_len
-    RMSE = np.sqrt(sum((abs(HR_predicted - HR_gt)) ** 2) / dXsub_len)
-    PC, _ = pearsonr(HR_gt, HR_predicted)
-    if MAE >= 25: print("Attention Video:", video_name)
-    print("MAE: ", MAE)
-    print("RMSE: ", RMSE)
-    print("PC", PC)
+    cMAE = sum(abs(HR_predicted - HR_gt)) / dXsub_len
+    cRMSE = np.sqrt(sum((abs(HR_predicted - HR_gt)) ** 2) / dXsub_len)
+    cR, _ = pearsonr(HR_gt, HR_predicted)
+
+    print("MAE: ", cMAE)
+    print("RMSE: ", cRMSE)
+    print("cR", cR)
     ################# Plot ##################
     # plt.subplot(211)
     # plt.plot(HR_predicted)
@@ -182,7 +218,7 @@ def predict_vitals(video_name):
     # plt.plot(HR_gt)
     # plt.title('Pulse Ground truth')
     # plt.show()
-    return MAE, RMSE, PC
+    return cMAE, cRMSE, cR
 
 
 if __name__ == "__main__":
@@ -202,19 +238,19 @@ if __name__ == "__main__":
             res.append(path)
     num_video = len(res)
 
-    results = [Parallel(n_jobs=-1)(delayed(predict_vitals)(video[0:-4]) for video in res[0:50])]
-    results = np.array(results)
-    MAE = results[0, :, 0]
-    RMSE = results[0, :, 1]
-    PC = results[0, :, 2]
-    print("Average MAE:", mean(MAE))
-    print("Average RMSE:", mean(RMSE))
-    print("Average PC:", mean(PC))
+    # results = [Parallel(n_jobs=4)(delayed(predict_vitals)(video[0:-4]) for video in res[0:50])]
+    # results = np.array(results)
+    # MAE = results[0, :, 0]
+    # RMSE = results[0, :, 1]
+    # PC = results[0, :, 2]
+    # print("Average MAE:", mean(MAE))
+    # print("Average RMSE:", mean(RMSE))
+    # print("Average PC:", mean(PC))
 
-    # for i in range(num_video):
-    #     print("Current Video:", res[i])
-    #     video_name = res[i][0:-4]
-    #     MAE, RMSE, PC = predict_vitals(video_name)
+    for i in range(num_video):
+        print("Current Video:", res[i])
+        video_name = res[i][0:-4]
+        MAE, RMSE, PC = predict_vitals(video_name)
 
     # video_name = predict_vitals(res[0][0:-4])
     #
