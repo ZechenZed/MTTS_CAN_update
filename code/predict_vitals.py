@@ -10,6 +10,7 @@ import csv
 import pandas as pd
 from scipy.stats import pearsonr
 import json
+from math import log
 
 # from numba import cuda, jit , cuda, uint32, f8, uint8
 
@@ -40,7 +41,7 @@ def prpsd(BVP, FS, LL_PR, UL_PR):
     """
 
     Nyquist = FS / 2
-    FResBPM = 0.5  # resolution (bpm) of bins in power spectrum used to determine PR and SNR
+    FResBPM = 1.30  # resolution (bpm) of bins in power spectrum used to determine PR and SNR
     N = int((60 * 2 * Nyquist) / FResBPM)
 
     # Construct Periodogram
@@ -131,54 +132,74 @@ def predict_vitals(video_name):
         HR_gt = [float(contents[start])]
 
         window_size = 1
+        # for i in range(start + 1, end):
+        #     if contents[i] == contents[i - 1]:
+        #         window_size += 1
+        #     else:
+        #         if HR_predicted[0] == 1.0:
+        #             HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 80, 100)
+        #         else:
+        #             pre_HR = HR_predicted[i - window_size - 3]
+        #             HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, max(60, pre_HR - 5),
+        #                                  min(pre_HR + 5, 140))
+        #         HR_predicted[i - window_size - 2:i - 2] = HR_pred_curr
+        #         window_size = 1
+        #     if i == end - 1:
+        #         window_size += 1
+        #         pre_HR = HR_predicted[i - window_size - 3]
+        #         HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, max(60, pre_HR - 5),
+        #                              min(pre_HR + 5, 140))
+        #         HR_predicted[i - window_size - 2:i + 1] = HR_pred_curr
+        #     HR_gt.append(float(contents[i][0:4]))
+        # HR_gt = np.array(HR_gt)
+        pre_HR = 80
         for i in range(start + 1, end):
             if contents[i] == contents[i - 1]:
                 window_size += 1
             else:
-                print(window_size)
                 if HR_predicted[0] == 1.0:
-                    HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 60, 140)
+                    HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 80, 100)
                 else:
                     pre_HR = HR_predicted[i - window_size - 3]
-                    HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, max(60, pre_HR - 10),
-                                         min(pre_HR + 10, 140))
-                HR_predicted[i - window_size - 2:i - 2] = HR_pred_curr
+                    HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 60, 140)
+                gap = pre_HR - HR_pred_curr
+                HR_predicted[i - window_size - 2:i - 2] = pre_HR - np.sign(gap) * 3 * log(abs(gap))
                 window_size = 1
             if i == end - 1:
                 window_size += 1
                 pre_HR = HR_predicted[i - window_size - 3]
-                HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, max(60, pre_HR - 10),
-                                     min(pre_HR + 10, 140))
-                HR_predicted[i - window_size - 2:i + 1] = HR_pred_curr
+                HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 60, 140)
+                gap = pre_HR - HR_pred_curr
+                HR_predicted[i - window_size - 2:i + 1] = pre_HR - np.sign(gap) * 3 * log(abs(gap))
             HR_gt.append(float(contents[i][0:4]))
         HR_gt = np.array(HR_gt)
 
-    #     window_size = 0
-    #     avg_HR_pred = prpsd(pulse_pred, fs, 60, 140)
-    #
-    #     for i in range(start + 1, end):
-    #         window_size += 1
-    #         if window_size == 15:
-    #             if HR_predicted[0] == 1.0:
-    #                 HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, max(60, avg_HR_pred - 10),
-    #                                      min(avg_HR_pred + 10, 140))
-    #             else:
-    #                 pre_HR = HR_predicted[i - window_size - 3]
-    #                 HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, max(60, pre_HR - 10),
-    #                                      min(pre_HR + 10, 140))
-    #             HR_predicted[i - window_size - 2:i - 2] = HR_pred_curr
-    #             window_size = 0
-    #         if i == end - 1:
-    #             window_size += 1
-    #             pre_HR = HR_predicted[i - window_size - 3]
-    #             HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, max(60, pre_HR - 10),
-    #                                  min(pre_HR + 10, 140))
-    #             HR_predicted[i - window_size - 2:i + 1] = HR_pred_curr
-    #         HR_gt.append(float(contents[i][0:4]))
-    #     HR_gt = np.array(HR_gt)
-    #
-    # plt.plot(HR_predicted, "b")
-    # plt.plot(HR_gt, "r")
+        # window_size = 0
+        # avg_HR_pred = prpsd(pulse_pred, fs, 60, 140)
+        # for i in range(start + 1, end):
+        #     window_size += 1
+        #     if window_size == 15:
+        #         if HR_predicted[0] == 1.0:
+        #             HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, max(60, avg_HR_pred - 10),
+        #                                  min(avg_HR_pred + 10, 140))
+        #         else:
+        #             pre_HR = HR_predicted[i - window_size - 3]
+        #             HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, max(60, pre_HR - 10),
+        #                                  min(pre_HR + 10, 140))
+        #         HR_predicted[i - window_size - 2:i - 2] = HR_pred_curr
+        #         window_size = 0
+        #     if i == end - 1:
+        #         window_size += 1
+        #         pre_HR = HR_predicted[i - window_size - 3]
+        #         HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, max(60, pre_HR - 10),
+        #                              min(pre_HR + 10, 140))
+        #         HR_predicted[i - window_size - 2:i + 1] = HR_pred_curr
+        #     HR_gt.append(float(contents[i][0:4]))
+        # HR_gt = np.array(HR_gt)
+
+    # plt.plot(HR_predicted, "b", label="Prediction")
+    # plt.plot(HR_gt, "r", label="Ground Truth")
+    # plt.legend()
     # plt.show()
 
     # with open("../../Phase2_data/test_set_gt_release.txt") as f:
@@ -238,22 +259,22 @@ if __name__ == "__main__":
             res.append(path)
     num_video = len(res)
 
-    # results = [Parallel(n_jobs=4)(delayed(predict_vitals)(video[0:-4]) for video in res[0:50])]
-    # results = np.array(results)
-    # MAE = results[0, :, 0]
-    # RMSE = results[0, :, 1]
-    # PC = results[0, :, 2]
-    # print("Average MAE:", mean(MAE))
-    # print("Average RMSE:", mean(RMSE))
-    # print("Average PC:", mean(PC))
+    results = [Parallel(n_jobs=-1)(delayed(predict_vitals)(video[0:-4]) for video in res)]
+    results = np.array(results)
+    MAE = results[0, :, 0]
+    RMSE = results[0, :, 1]
+    PC = results[0, :, 2]
+    print("Average MAE:", mean(MAE))
+    print("Average RMSE:", mean(RMSE))
+    print("Average PC:", mean(PC))
 
-    for i in range(num_video):
-        print("Current Video:", res[i])
-        video_name = res[i][0:-4]
-        MAE, RMSE, PC = predict_vitals(video_name)
+    # for i in range(num_video):
+    #     print("Current Video:", res[i])
+    #     video_name = res[i][0:-4]
+    #     MAE, RMSE, PC = predict_vitals(video_name)
 
     # video_name = predict_vitals(res[0][0:-4])
-    #
+
     fig1, axs1 = plt.subplots(3, 1, figsize=(10, 7), tight_layout=True)
     axs1[0].hist(MAE, bins=20)
     axs1[0].title.set_text("MAE")
