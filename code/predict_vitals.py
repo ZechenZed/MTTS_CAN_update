@@ -41,7 +41,7 @@ def prpsd(BVP, FS, LL_PR, UL_PR):
     """
 
     Nyquist = FS / 2
-    FResBPM = 1.30  # resolution (bpm) of bins in power spectrum used to determine PR and SNR
+    FResBPM = 0.5  # resolution (bpm) of bins in power spectrum used to determine PR and SNR
     N = int((60 * 2 * Nyquist) / FResBPM)
 
     # Construct Periodogram
@@ -82,9 +82,10 @@ def predict_vitals(video_name):
     pulse_pred = yptest[0]
     pulse_pred = detrend(np.cumsum(pulse_pred), 100)
     # bandpass filter with range of [0.7, 2.5]
-    [b_pulse, a_pulse] = butter(1, [0.75 / fs * 2, 2.5 / fs * 2], btype='bandpass')
+    # [b_pulse, a_pulse] = butter(1, [0.75 / fs * 2, 2.5 / fs * 2], btype='bandpass')
+    [b_pulse, a_pulse] = butter(1, [(40 / 60) / fs * 2, (140 / 60) / fs * 2], btype='bandpass')
+
     pulse_pred = scipy.signal.filtfilt(b_pulse, a_pulse, np.double(pulse_pred))
-    HR_predicted = np.ones(dXsub_len)
 
     # resp_pred = yptest[1]
     # resp_pred = detrend(np.cumsum(resp_pred), 100)
@@ -123,6 +124,7 @@ def predict_vitals(video_name):
     # plt.title('Pulse Prediction')
     # plt.show()
 
+    HR_predicted = np.ones(dXsub_len)
     with open("../../Phase1_data/Ground_truth/Physiology/" + video_name + ".txt") as f:
         contents = f.read()
         contents = contents.split(", ")
@@ -130,8 +132,9 @@ def predict_vitals(video_name):
         end = start + dXsub_len
         # print('Number of ground truth frame:', end - start)
         HR_gt = [float(contents[start])]
-
         window_size = 1
+
+        # # Cap of increase by linear gap
         # for i in range(start + 1, end):
         #     if contents[i] == contents[i - 1]:
         #         window_size += 1
@@ -152,48 +155,56 @@ def predict_vitals(video_name):
         #         HR_predicted[i - window_size - 2:i + 1] = HR_pred_curr
         #     HR_gt.append(float(contents[i][0:4]))
         # HR_gt = np.array(HR_gt)
+
+        # # Cap of increase by logarithm increase
         pre_HR = 80
+        cap = 3
         for i in range(start + 1, end):
             if contents[i] == contents[i - 1]:
                 window_size += 1
             else:
                 if HR_predicted[0] == 1.0:
-                    HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 80, 100)
+                    HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
                 else:
                     pre_HR = HR_predicted[i - window_size - 3]
-                    HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 60, 140)
+                    HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
                 gap = pre_HR - HR_pred_curr
-                HR_predicted[i - window_size - 2:i - 2] = pre_HR - np.sign(gap) * 3 * log(abs(gap))
+                if gap == 0: gap = 0.001
+                HR_predicted[i - window_size - 2:i - 2] = pre_HR - np.sign(gap) * (cap / log(cap)) * log(abs(gap))
                 window_size = 1
             if i == end - 1:
                 window_size += 1
                 pre_HR = HR_predicted[i - window_size - 3]
-                HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 60, 140)
+                HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
                 gap = pre_HR - HR_pred_curr
-                HR_predicted[i - window_size - 2:i + 1] = pre_HR - np.sign(gap) * 3 * log(abs(gap))
+                if gap == 0: gap = 0.001
+                HR_predicted[i - window_size - 2:i + 1] = pre_HR - np.sign(gap) * (cap / log(cap)) * log(abs(gap))
             HR_gt.append(float(contents[i][0:4]))
         HR_gt = np.array(HR_gt)
 
+        # # Constant window
+        # pre_HR = prpsd(pulse_pred[0:int(dXsub_len / 4)], fs, 40, 140)
         # window_size = 0
-        # avg_HR_pred = prpsd(pulse_pred, fs, 60, 140)
         # for i in range(start + 1, end):
         #     window_size += 1
-        #     if window_size == 15:
+        #     if window_size == 13:
         #         if HR_predicted[0] == 1.0:
-        #             HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, max(60, avg_HR_pred - 10),
-        #                                  min(avg_HR_pred + 10, 140))
+        #             HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
         #         else:
         #             pre_HR = HR_predicted[i - window_size - 3]
-        #             HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, max(60, pre_HR - 10),
-        #                                  min(pre_HR + 10, 140))
-        #         HR_predicted[i - window_size - 2:i - 2] = HR_pred_curr
+        #             HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
+        #         gap = pre_HR - HR_pred_curr
+        #         if gap == 0 : gap = 0.001
+        #         HR_predicted[i - window_size - 2:i - 2] = pre_HR - np.sign(gap) * 3 * log(abs(gap))
         #         window_size = 0
         #     if i == end - 1:
         #         window_size += 1
         #         pre_HR = HR_predicted[i - window_size - 3]
-        #         HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, max(60, pre_HR - 10),
-        #                              min(pre_HR + 10, 140))
-        #         HR_predicted[i - window_size - 2:i + 1] = HR_pred_curr
+        #         HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
+        #         gap = pre_HR - HR_pred_curr
+        #         if gap == 0 : gap = 0.001
+        #
+        #         HR_predicted[i - window_size - 2:i + 1] = pre_HR - np.sign(gap) * 3 * log(abs(gap))
         #     HR_gt.append(float(contents[i][0:4]))
         # HR_gt = np.array(HR_gt)
 
@@ -202,27 +213,53 @@ def predict_vitals(video_name):
     # plt.legend()
     # plt.show()
 
+    # HR_predicted = np.ones(dXsub_len)
     # with open("../../Phase2_data/test_set_gt_release.txt") as f:
     #     contents = f.read()
     #     contents = contents.split(", ")
+    #
     #     indices = [i for i, s in enumerate(contents) if video_name + ".mkv" in s]
     #     start = indices[0] + 2
     #     end = start + dXsub_len
+    #
     #     # print('Number of ground truth frame:', end - start)
     #     window_size = 1
     #     HR_gt = [float(contents[start])]
     #     length = end - start
-    #     for i in range(1, length):
-    #         if contents[i] == contents[i - 1]:
+    #
+    #     pre_HR = 80
+    #     for i in range(3, length + 2):
+    #         if contents[i + start] == contents[i + start - 1]:
     #             window_size += 1
     #         else:
-    #             if i == end - 1:
-    #                 window_size += 1
-    #             HR_pred_curr = prpsd(pulse_pred[i - window_size:i], fs, 40, 140)
-    #             HR_predicted[i - window_size - 2:i - 1] = HR_pred_curr
+    #             # print("check 1, window size:",window_size,"i:",i)
+    #             if HR_predicted[0] == 1.0:
+    #                 HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
+    #             else:
+    #                 pre_HR = HR_predicted[i - window_size - 3]
+    #                 HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
+    #             gap = pre_HR - HR_pred_curr
+    #             if gap == 0: gap = 0.001
+    #             HR_predicted[i - window_size - 2:i - 2] = pre_HR - np.sign(gap) * 3 * log(abs(gap))
     #             window_size = 1
-    #         HR_gt.append(float(contents[i][0:4]))
+    #         if i == length:
+    #             window_size += 1
+    #             pre_HR = HR_predicted[i - window_size - 3]
+    #             HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
+    #             gap = pre_HR - HR_pred_curr
+    #             if gap == 0: gap = 0.001
+    #             HR_predicted[i - window_size - 2:i + 1] = pre_HR - np.sign(gap) * 3 * log(abs(gap))
+    #         try:
+    #             HR_gt.append(float(contents[i][0:4]))
+    #         except:
+    #             stop = i - 1
+    #             HR_predicted = HR_predicted[0:stop - 1]
+    #             break
     #     HR_gt = np.array(HR_gt)
+
+    # plt.plot(HR_predicted)
+    # plt.title('Pulse Prediction')
+    # plt.show()
 
     cMAE = sum(abs(HR_predicted - HR_gt)) / dXsub_len
     cRMSE = np.sqrt(sum((abs(HR_predicted - HR_gt)) ** 2) / dXsub_len)
@@ -231,24 +268,10 @@ def predict_vitals(video_name):
     print("MAE: ", cMAE)
     print("RMSE: ", cRMSE)
     print("cR", cR)
-    ################# Plot ##################
-    # plt.subplot(211)
-    # plt.plot(HR_predicted)
-    # plt.title('Pulse Prediction')
-    # plt.subplot(212)
-    # plt.plot(HR_gt)
-    # plt.title('Pulse Ground truth')
-    # plt.show()
     return cMAE, cRMSE, cR
 
 
 if __name__ == "__main__":
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument('--video_name', type=str, help='processed video name')
-    # parser.add_argument('--sampling_rate', type=int, default=25, help='sampling rate of your video')
-    # parser.add_argument('--batch_size', type=int, default=100, help='batch size (multiplier of 10)')
-    # args = parser.parse_args()
-
     # dir_path = "../../data"
     dir_path = "../../Phase1_data/Videos/train"
     # dir_path = "../../Phase2_data/Videos/Test"
@@ -259,7 +282,7 @@ if __name__ == "__main__":
             res.append(path)
     num_video = len(res)
 
-    results = [Parallel(n_jobs=-1)(delayed(predict_vitals)(video[0:-4]) for video in res)]
+    results = [Parallel(n_jobs=4)(delayed(predict_vitals)(video[0:-4]) for video in res)]
     results = np.array(results)
     MAE = results[0, :, 0]
     RMSE = results[0, :, 1]
@@ -272,8 +295,6 @@ if __name__ == "__main__":
     #     print("Current Video:", res[i])
     #     video_name = res[i][0:-4]
     #     MAE, RMSE, PC = predict_vitals(video_name)
-
-    # video_name = predict_vitals(res[0][0:-4])
 
     fig1, axs1 = plt.subplots(3, 1, figsize=(10, 7), tight_layout=True)
     axs1[0].hist(MAE, bins=20)
