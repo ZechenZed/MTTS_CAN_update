@@ -158,7 +158,7 @@ def predict_vitals(video_name):
 
         # # Cap of increase by logarithm increase
         pre_HR = 80
-        cap = 3
+        cap = 4
         for i in range(start + 1, end):
             if contents[i] == contents[i - 1]:
                 window_size += 1
