@@ -18,7 +18,7 @@ sys.path.append('../')
 from model import Attention_mask, MTTS_CAN, TS_CAN
 import h5py
 import matplotlib.pyplot as plt
-from scipy.signal import butter
+from scipy.signal import butter, filtfilt
 from inference_preprocess import preprocess_raw_video, detrend
 from numba import jit, cuda
 
@@ -28,7 +28,7 @@ from joblib import Parallel, delayed
 from statistics import mean
 
 
-def prpsd(BVP, FS=25, LL_PR=45, UL_PR=150):
+def prpsd(BVP, FS, LL_PR, UL_PR):
     """
     Estimates a pulse rate from a BVP signal.
     Inputs:
@@ -43,9 +43,11 @@ def prpsd(BVP, FS=25, LL_PR=45, UL_PR=150):
 
     Nyquist = FS / 2
     FResBPM = 0.5  # resolution (bpm) of bins in power spectrum used to determine PR and SNR
+    # overlap_ratio = 0.5
 
     N = int((60 * 2 * Nyquist) / FResBPM)
     # N = _next_power_of_2(BVP.shape[0])
+    # N = int(np.floor((Nyquist / FResBPM - 1) / (1 - overlap_ratio)))
 
     # Construct Periodogram
     F, Pxx = periodogram(BVP, window=np.hamming(len(BVP)), nfft=N, fs=FS)
@@ -72,7 +74,7 @@ def _calculate_fft_hr(ppg_signal, fs=25, low_pass=0.75, high_pass=2.5):
     """Calculate heart rate based on PPG using Fast Fourier transform (FFT)."""
     ppg_signal = np.expand_dims(ppg_signal, 0)
     N = _next_power_of_2(ppg_signal.shape[1])
-    f_ppg, pxx_ppg = scipy.signal.periodogram(ppg_signal, fs=fs, nfft=N, detrend=False)
+    f_ppg, pxx_ppg = periodogram(ppg_signal, fs=fs, nfft=N, detrend=False)
     fmask_ppg = np.argwhere((f_ppg >= low_pass) & (f_ppg <= high_pass))
     mask_ppg = np.take(f_ppg, fmask_ppg)
     mask_pxx = np.take(pxx_ppg, fmask_ppg)
@@ -110,9 +112,9 @@ def predict_vitals(video_name, dir_path, data_set, filter):
 
     # bandpass filter with range of [0.75, 2.5]
     # [b_pulse, a_pulse] = butter(1, [0.75 / fs * 2, 2.5 / fs * 2], btype='bandpass')
-    [b_pulse, a_pulse] = butter(1, [(40 / 60) / fs * 2, (140 / 60) / fs * 2], btype='bandpass')
+    [b_pulse, a_pulse] = butter(3, [(40 / 60) / fs * 2, (140 / 60) / fs * 2], btype='bandpass')
 
-    pulse_pred = scipy.signal.filtfilt(b_pulse, a_pulse, np.double(pulse_pred))
+    pulse_pred = filtfilt(b_pulse, a_pulse, np.double(pulse_pred))
 
     # resp_pred = yptest[1]
     # resp_pred = detrend(np.cumsum(resp_pred), 100)
@@ -136,6 +138,8 @@ def predict_vitals(video_name, dir_path, data_set, filter):
     #######################################################################
     # Train dataset
     HR_predicted = np.ones(dXsub_len)
+    ###################################################################################
+    # # Train dataset =
     if data_set == "Train":
         with open("../../Phase1_data/Ground_truth/Physiology/" + video_name + ".txt") as f:
             contents = f.read()
@@ -239,7 +243,7 @@ def predict_vitals(video_name, dir_path, data_set, filter):
                 window_size = 1
                 HR_gt = [float(contents[start])]
                 length = end - start
-                pre_HR = 80
+                pre_HR = prpsd(pulse_pred[0:100], fs, 40, 140)
                 cap = 3
                 for i in range(3, length + 2):
                     if contents[i + start] == contents[i + start - 1]:
@@ -341,9 +345,9 @@ def predict_vitals(video_name, dir_path, data_set, filter):
     cRMSE = np.sqrt(sum((abs(HR_predicted - HR_gt)) ** 2) / dXsub_len)
     cR, _ = pearsonr(HR_gt, HR_predicted)
 
-    print("MAE: ", cMAE)
-    print("RMSE: ", cRMSE)
-    print("cR", cR)
+    print("cMAE: ", cMAE)
+    print("cRMSE: ", cRMSE)
+    print("cR: ", cR)
     return cMAE, cRMSE, cR
 
 
@@ -360,7 +364,7 @@ if __name__ == "__main__":
             res.append(path)
     num_video = len(res)
 
-    results = [Parallel(n_jobs=-1)(delayed(predict_vitals)(video[0:-4], dir_path, datatype, True) for video in res)]
+    results = [Parallel(n_jobs=4)(delayed(predict_vitals)(video[0:-4], dir_path, datatype, True) for video in res[0:50])]
     results = np.array(results)
     MAE = results[0, :, 0]
     RMSE = results[0, :, 1]
@@ -375,11 +379,11 @@ if __name__ == "__main__":
     #     MAE, RMSE, PC = predict_vitals(video_name)
 
     fig1, axs1 = plt.subplots(3, 1, figsize=(10, 7), tight_layout=True)
-    axs1[0].hist(MAE, bins=20)
+    axs1[0].hist(MAE, bins=50)
     axs1[0].title.set_text("MAE")
-    axs1[1].hist(RMSE, bins=20)
+    axs1[1].hist(RMSE, bins=50)
     axs1[1].title.set_text("RMSE")
-    axs1[2].hist(RMSE, bins=20)
+    axs1[2].hist(RMSE, bins=50)
     axs1[2].title.set_text("PC")
     plt.show()
 
