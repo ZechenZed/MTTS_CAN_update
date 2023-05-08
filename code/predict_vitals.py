@@ -20,6 +20,7 @@ import h5py
 import matplotlib.pyplot as plt
 from scipy.signal import butter
 from inference_preprocess import preprocess_raw_video, detrend
+from numba import jit, cuda
 
 import numpy as np
 from scipy.signal import periodogram
@@ -27,7 +28,7 @@ from joblib import Parallel, delayed
 from statistics import mean
 
 
-def prpsd(BVP, FS, LL_PR, UL_PR):
+def prpsd(BVP, FS=25, LL_PR=45, UL_PR=150):
     """
     Estimates a pulse rate from a BVP signal.
     Inputs:
@@ -42,10 +43,14 @@ def prpsd(BVP, FS, LL_PR, UL_PR):
 
     Nyquist = FS / 2
     FResBPM = 0.5  # resolution (bpm) of bins in power spectrum used to determine PR and SNR
+
     N = int((60 * 2 * Nyquist) / FResBPM)
+    # N = _next_power_of_2(BVP.shape[0])
 
     # Construct Periodogram
     F, Pxx = periodogram(BVP, window=np.hamming(len(BVP)), nfft=N, fs=FS)
+    # F, Pxx = periodogram(BVP,  detrend=False, nfft=N, fs=FS)
+
     FMask = (F >= (LL_PR / 60)) & (F <= (UL_PR / 60))
 
     # Calculate predicted HR:
@@ -58,7 +63,30 @@ def prpsd(BVP, FS, LL_PR, UL_PR):
     return PR
 
 
-def predict_vitals(video_name):
+def _next_power_of_2(x):
+    """Calculate the nearest power of 2."""
+    return 1 if x == 0 else 2 ** (x - 1).bit_length()
+
+
+def _calculate_fft_hr(ppg_signal, fs=25, low_pass=0.75, high_pass=2.5):
+    """Calculate heart rate based on PPG using Fast Fourier transform (FFT)."""
+    ppg_signal = np.expand_dims(ppg_signal, 0)
+    N = _next_power_of_2(ppg_signal.shape[1])
+    f_ppg, pxx_ppg = scipy.signal.periodogram(ppg_signal, fs=fs, nfft=N, detrend=False)
+    fmask_ppg = np.argwhere((f_ppg >= low_pass) & (f_ppg <= high_pass))
+    mask_ppg = np.take(f_ppg, fmask_ppg)
+    mask_pxx = np.take(pxx_ppg, fmask_ppg)
+    fft_hr = np.take(mask_ppg, np.argmax(mask_pxx, 0))[0] * 60
+    return fft_hr
+
+def filter_fxn(pre_HR,cur_HR,cap):
+    gap = pre_HR-cur_HR
+    if abs(gap) < cap:
+        return cur_HR
+    else:
+        return pre_HR - np.sign(gap) * cap * log(abs(gap) + 1)
+
+def predict_vitals(video_name, dir_path, data_set, filter):
     img_rows = 36
     img_cols = 36
     frame_depth = 10
@@ -66,9 +94,7 @@ def predict_vitals(video_name):
     batch_size = 10
     fs = 25
 
-    # sample_data_path = " ../../data/" + video_name + ".mkv"
-    sample_data_path = " ../../Phase1_data/Videos/train/" + video_name + ".mkv"
-    # sample_data_path = " ../../Phase2_data/Videos/Test/" + video_name + ".mkv"
+    sample_data_path = dir_path + video_name + ".mkv"
 
     dXsub = preprocess_raw_video(sample_data_path, dim=36)
     dXsub_len = (dXsub.shape[0] // frame_depth) * frame_depth
@@ -81,7 +107,8 @@ def predict_vitals(video_name):
 
     pulse_pred = yptest[0]
     pulse_pred = detrend(np.cumsum(pulse_pred), 100)
-    # bandpass filter with range of [0.7, 2.5]
+
+    # bandpass filter with range of [0.75, 2.5]
     # [b_pulse, a_pulse] = butter(1, [0.75 / fs * 2, 2.5 / fs * 2], btype='bandpass')
     [b_pulse, a_pulse] = butter(1, [(40 / 60) / fs * 2, (140 / 60) / fs * 2], btype='bandpass')
 
@@ -92,24 +119,6 @@ def predict_vitals(video_name):
     # [b_resp, a_resp] = butter(1, [0.08 / fs * 2, 0.5 / fs * 2], btype='bandpass')
     # resp_pred = scipy.signal.filtfilt(b_resp, a_resp, np.double(resp_pred))
 
-    # # PURE dataset
-    # f = open('../../PURE/08-01/08-01.json')
-    # data = json.load(f)
-    # HR_gt = []
-    # for i in data['/FullPackage']:
-    #     info_keys = i["Value"]
-    #     HR_gt.append(info_keys["pulseRate"])
-    #
-    # f.close()
-    # # Iterating through the json
-    # # list
-    # HR_gt = []
-    # for i in data['/FullPackage']:
-    #     info_keys = i["Value"]
-    #     HR_gt.append(info_keys["pulseRate"])
-    #
-    # print(len(HR_gt))
-    # HR_gt = HR_gt[0:dXsub_len]
     # # Customized test
     # for i in range(0, dXsub_len, 15):
     #     if i == 0:
@@ -124,142 +133,209 @@ def predict_vitals(video_name):
     # plt.title('Pulse Prediction')
     # plt.show()
 
+    #######################################################################
+    # Train dataset
     HR_predicted = np.ones(dXsub_len)
-    with open("../../Phase1_data/Ground_truth/Physiology/" + video_name + ".txt") as f:
-        contents = f.read()
-        contents = contents.split(", ")
-        start = 2
-        end = start + dXsub_len
-        # print('Number of ground truth frame:', end - start)
-        HR_gt = [float(contents[start])]
-        window_size = 1
+    if data_set == "Train":
+        with open("../../Phase1_data/Ground_truth/Physiology/" + video_name + ".txt") as f:
+            contents = f.read()
+            contents = contents.split(", ")
+            start = 2
+            end = start + dXsub_len
+            # print('Number of ground truth frame:', end - start)
+            HR_gt = [float(contents[start])]
+            window_size = 1
 
-        # # Cap of increase by linear gap
-        # for i in range(start + 1, end):
-        #     if contents[i] == contents[i - 1]:
-        #         window_size += 1
-        #     else:
-        #         if HR_predicted[0] == 1.0:
-        #             HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 80, 100)
-        #         else:
-        #             pre_HR = HR_predicted[i - window_size - 3]
-        #             HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, max(60, pre_HR - 5),
-        #                                  min(pre_HR + 5, 140))
-        #         HR_predicted[i - window_size - 2:i - 2] = HR_pred_curr
-        #         window_size = 1
-        #     if i == end - 1:
-        #         window_size += 1
-        #         pre_HR = HR_predicted[i - window_size - 3]
-        #         HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, max(60, pre_HR - 5),
-        #                              min(pre_HR + 5, 140))
-        #         HR_predicted[i - window_size - 2:i + 1] = HR_pred_curr
-        #     HR_gt.append(float(contents[i][0:4]))
-        # HR_gt = np.array(HR_gt)
-
-        # # Cap of increase by logarithm increase
-        pre_HR = 80
-        cap = 4
-        for i in range(start + 1, end):
-            if contents[i] == contents[i - 1]:
-                window_size += 1
-            else:
-                if HR_predicted[0] == 1.0:
-                    HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
+            # Cap of increase by logarithm increase
+            pre_HR = prpsd(pulse_pred[0:50], fs, 60, 100)
+            cap = 3
+            for i in range(start + 1, end):
+                if contents[i] == contents[i - 1]:
+                    window_size += 1
                 else:
+                    if HR_predicted[0] != 1.0:
+                        pre_HR = HR_predicted[i - window_size - 3]
+                    HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
+                    HR_predicted[i - window_size - 2:i - 2] = filter_fxn(pre_HR,HR_pred_curr,cap)
+                    window_size = 1
+                if i == end - 1:
+                    window_size += 1
                     pre_HR = HR_predicted[i - window_size - 3]
                     HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
-                gap = pre_HR - HR_pred_curr
-                if gap == 0: gap = 0.001
-                HR_predicted[i - window_size - 2:i - 2] = pre_HR - np.sign(gap) * (cap / log(cap)) * log(abs(gap))
+                    HR_predicted[i - window_size - 2:i - 2] = filter_fxn(pre_HR,HR_pred_curr,cap)
+                HR_gt.append(float(contents[i][0:4]))
+            HR_gt = np.array(HR_gt)
+
+            # # Constant window
+            # pre_HR = prpsd(pulse_pred[0:int(dXsub_len / 4)], fs, 40, 140)
+            # window_size = 0
+            # for i in range(start + 1, end):
+            #     window_size += 1
+            #     if window_size == 13:
+            #         if HR_predicted[0] == 1.0:
+            #             HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
+            #         else:
+            #             pre_HR = HR_predicted[i - window_size - 3]
+            #             HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
+            #         gap = pre_HR - HR_pred_curr
+            #         if gap == 0 : gap = 0.001
+            #         HR_predicted[i - window_size - 2:i - 2] = pre_HR - np.sign(gap) * 3 * log(abs(gap))
+            #         window_size = 0
+            #     if i == end - 1:
+            #         window_size += 1
+            #         pre_HR = HR_predicted[i - window_size - 3]
+            #         HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
+            #         gap = pre_HR - HR_pred_curr
+            #         if gap == 0 : gap = 0.001
+            #
+            #         HR_predicted[i - window_size - 2:i + 1] = pre_HR - np.sign(gap) * 3 * log(abs(gap))
+            #     HR_gt.append(float(contents[i][0:4]))
+            # HR_gt = np.array(HR_gt)
+        plt.plot(HR_predicted, "b", label="Prediction")
+        plt.plot(HR_gt, "r", label="Ground Truth")
+        plt.legend()
+        plt.show()
+
+    ####################################################################################
+    # # Validation Dataset
+    # # Original
+    elif data_set == "Valid":
+        if not filter:
+            with open("../../Phase2_data/validation_set_gt_release.txt") as f:
+                contents = f.read()
+                contents = contents.split(", ")
+                indices = [i for i, s in enumerate(contents) if video_name + ".mkv" in s]
+                start = indices[0] + 2
+                end = start + dXsub_len
                 window_size = 1
-            if i == end - 1:
-                window_size += 1
-                pre_HR = HR_predicted[i - window_size - 3]
-                HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
-                gap = pre_HR - HR_pred_curr
-                if gap == 0: gap = 0.001
-                HR_predicted[i - window_size - 2:i + 1] = pre_HR - np.sign(gap) * (cap / log(cap)) * log(abs(gap))
-            HR_gt.append(float(contents[i][0:4]))
-        HR_gt = np.array(HR_gt)
+                HR_gt = [float(contents[start])]
+                length = end - start
+                for i in range(3, length + 2):
+                    if contents[i + start] == contents[i + start - 1]:
+                        window_size += 1
+                    else:
+                        HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 45, 150)
+                        HR_predicted[i - window_size - 2:i - 2] = HR_pred_curr
+                        window_size = 1
+                    if i == length:
+                        window_size += 1
+                        HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 45, 150)
+                        HR_predicted[i - window_size - 2:i + 1] = HR_pred_curr
+                    try:
+                        HR_gt.append(float(contents[i][0:4]))
+                    except:
+                        stop = i - 1
+                        HR_predicted = HR_predicted[0:stop - 1]
+                        break
+                HR_gt = np.array(HR_gt)
+        else:
+            # With filtering
+            with open("../../Phase2_data/validation_set_gt_release.txt") as f:
+                contents = f.read()
+                contents = contents.split(", ")
+                indices = [i for i, s in enumerate(contents) if video_name + ".mkv" in s]
+                start = indices[0] + 2
+                end = start + dXsub_len
+                window_size = 1
+                HR_gt = [float(contents[start])]
+                length = end - start
+                pre_HR = 80
+                cap = 3
+                for i in range(3, length + 2):
+                    if contents[i + start] == contents[i + start - 1]:
+                        window_size += 1
+                    else:
+                        if HR_predicted[0] == 1.0:
+                            HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
+                        else:
+                            pre_HR = HR_predicted[i - window_size - 3]
+                            HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
+                        HR_predicted[i - window_size - 2:i - 2] = filter_fxn(pre_HR, HR_pred_curr, cap)
+                        window_size = 1
+                    if i == length:
+                        window_size += 1
+                        pre_HR = HR_predicted[i - window_size - 3]
+                        HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
+                        HR_predicted[i - window_size - 2:i - 2] = filter_fxn(pre_HR, HR_pred_curr, cap)
+                    try:
+                        HR_gt.append(float(contents[i][0:4]))
+                    except:
+                        stop = i - 1
+                        HR_predicted = HR_predicted[0:stop - 1]
+                        break
+                HR_gt = np.array(HR_gt)
 
-        # # Constant window
-        # pre_HR = prpsd(pulse_pred[0:int(dXsub_len / 4)], fs, 40, 140)
-        # window_size = 0
-        # for i in range(start + 1, end):
-        #     window_size += 1
-        #     if window_size == 13:
-        #         if HR_predicted[0] == 1.0:
-        #             HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
-        #         else:
-        #             pre_HR = HR_predicted[i - window_size - 3]
-        #             HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
-        #         gap = pre_HR - HR_pred_curr
-        #         if gap == 0 : gap = 0.001
-        #         HR_predicted[i - window_size - 2:i - 2] = pre_HR - np.sign(gap) * 3 * log(abs(gap))
-        #         window_size = 0
-        #     if i == end - 1:
-        #         window_size += 1
-        #         pre_HR = HR_predicted[i - window_size - 3]
-        #         HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
-        #         gap = pre_HR - HR_pred_curr
-        #         if gap == 0 : gap = 0.001
-        #
-        #         HR_predicted[i - window_size - 2:i + 1] = pre_HR - np.sign(gap) * 3 * log(abs(gap))
-        #     HR_gt.append(float(contents[i][0:4]))
-        # HR_gt = np.array(HR_gt)
-
-    # plt.plot(HR_predicted, "b", label="Prediction")
-    # plt.plot(HR_gt, "r", label="Ground Truth")
-    # plt.legend()
-    # plt.show()
-
-    # HR_predicted = np.ones(dXsub_len)
-    # with open("../../Phase2_data/test_set_gt_release.txt") as f:
-    #     contents = f.read()
-    #     contents = contents.split(", ")
-    #
-    #     indices = [i for i, s in enumerate(contents) if video_name + ".mkv" in s]
-    #     start = indices[0] + 2
-    #     end = start + dXsub_len
-    #
-    #     # print('Number of ground truth frame:', end - start)
-    #     window_size = 1
-    #     HR_gt = [float(contents[start])]
-    #     length = end - start
-    #
-    #     pre_HR = 80
-    #     for i in range(3, length + 2):
-    #         if contents[i + start] == contents[i + start - 1]:
-    #             window_size += 1
-    #         else:
-    #             # print("check 1, window size:",window_size,"i:",i)
-    #             if HR_predicted[0] == 1.0:
-    #                 HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
-    #             else:
-    #                 pre_HR = HR_predicted[i - window_size - 3]
-    #                 HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
-    #             gap = pre_HR - HR_pred_curr
-    #             if gap == 0: gap = 0.001
-    #             HR_predicted[i - window_size - 2:i - 2] = pre_HR - np.sign(gap) * 3 * log(abs(gap))
-    #             window_size = 1
-    #         if i == length:
-    #             window_size += 1
-    #             pre_HR = HR_predicted[i - window_size - 3]
-    #             HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
-    #             gap = pre_HR - HR_pred_curr
-    #             if gap == 0: gap = 0.001
-    #             HR_predicted[i - window_size - 2:i + 1] = pre_HR - np.sign(gap) * 3 * log(abs(gap))
-    #         try:
-    #             HR_gt.append(float(contents[i][0:4]))
-    #         except:
-    #             stop = i - 1
-    #             HR_predicted = HR_predicted[0:stop - 1]
-    #             break
-    #     HR_gt = np.array(HR_gt)
-
-    # plt.plot(HR_predicted)
-    # plt.title('Pulse Prediction')
-    # plt.show()
+    #############################################################################################
+    # # Test dataset
+    elif data_set == "Test":
+        if not filter:
+            # Original
+            with open("../../Phase2_data/test_set_gt_release.txt") as f:
+                contents = f.read()
+                contents = contents.split(", ")
+                indices = [i for i, s in enumerate(contents) if video_name + ".mkv" in s]
+                start = indices[0] + 2
+                end = start + dXsub_len
+                window_size = 1
+                HR_gt = [float(contents[start])]
+                length = end - start
+                for i in range(3, length + 2):
+                    if contents[i + start] == contents[i + start - 1]:
+                        window_size += 1
+                    else:
+                        HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 45, 150)
+                        HR_predicted[i - window_size - 2:i - 2] = HR_pred_curr
+                        window_size = 1
+                    if i == length:
+                        window_size += 1
+                        HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 45, 150)
+                        HR_predicted[i - window_size - 2:i + 1] = HR_pred_curr
+                    try:
+                        HR_gt.append(float(contents[i][0:4]))
+                    except:
+                        stop = i - 1
+                        HR_predicted = HR_predicted[0:stop - 1]
+                        break
+                HR_gt = np.array(HR_gt)
+        else:
+            # Filtering
+            HR_predicted = np.ones(dXsub_len)
+            with open("../../Phase2_data/test_set_gt_release.txt") as f:
+                contents = f.read()
+                contents = contents.split(", ")
+                indices = [i for i, s in enumerate(contents) if video_name + ".mkv" in s]
+                start = indices[0] + 2
+                end = start + dXsub_len
+                window_size = 1
+                HR_gt = [float(contents[start])]
+                length = end - start
+                pre_HR = 80
+                cap = 3
+                for i in range(3, length + 2):
+                    if contents[i + start] == contents[i + start - 1]:
+                        window_size += 1
+                    else:
+                        if HR_predicted[0] == 1.0:
+                            HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
+                        else:
+                            pre_HR = HR_predicted[i - window_size - 3]
+                            HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
+                        HR_predicted[i - window_size - 2:i - 2] = filter_fxn(pre_HR, HR_pred_curr, cap)
+                        window_size = 1
+                    if i == length:
+                        window_size += 1
+                        pre_HR = HR_predicted[i - window_size - 3]
+                        HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
+                        HR_predicted[i - window_size - 2:i - 2] = filter_fxn(pre_HR, HR_pred_curr, cap)
+                    try:
+                        HR_gt.append(float(contents[i][0:4]))
+                    except:
+                        stop = i - 1
+                        HR_predicted = HR_predicted[0:stop - 1]
+                        break
+                HR_gt = np.array(HR_gt)
+    else:
+        print("choose the correct datatype from: train, valid, test")
 
     cMAE = sum(abs(HR_predicted - HR_gt)) / dXsub_len
     cRMSE = np.sqrt(sum((abs(HR_predicted - HR_gt)) ** 2) / dXsub_len)
@@ -272,9 +348,11 @@ def predict_vitals(video_name):
 
 
 if __name__ == "__main__":
-    # dir_path = "../../data"
-    dir_path = "../../Phase1_data/Videos/train"
-    # dir_path = "../../Phase2_data/Videos/Test"
+    datatype = "Valid"
+    if datatype != "Test":
+        dir_path = "../../Phase1_data/Videos/" + datatype + "/"
+    else:
+        dir_path = "../../Phase2_data/Videos/" + datatype + "/"
 
     res = []
     for path in os.listdir(dir_path):
@@ -282,7 +360,7 @@ if __name__ == "__main__":
             res.append(path)
     num_video = len(res)
 
-    results = [Parallel(n_jobs=4)(delayed(predict_vitals)(video[0:-4]) for video in res)]
+    results = [Parallel(n_jobs=-1)(delayed(predict_vitals)(video[0:-4], dir_path, datatype, True) for video in res)]
     results = np.array(results)
     MAE = results[0, :, 0]
     RMSE = results[0, :, 1]

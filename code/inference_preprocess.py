@@ -1,5 +1,4 @@
 import random
-
 import numpy as np
 import cv2
 from skimage.util import img_as_float
@@ -8,16 +7,18 @@ import matplotlib.pyplot as plt
 import time
 import scipy.io
 from scipy.sparse import spdiags
-# from numba import jit
-#
+from numba import jit
+from timeit import default_timer as timer
+from joblib import Parallel, delayed
+# from numba.typed import List
+
 # def resize_image(img, h_new, w_old, h_old):
 #     "I believe reszing image before face detection will speed up"
 #     r = h_new / float(h_old)
 #     dim = (int(w_old * r), h_new)
 #     resized = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
 #     return resized
-#
-#
+
 # def non_skin_remove(patches):
 #     patches_hsv = [cv2.cvtColor(i, cv2.COLOR_RGB2HSV) for i in patches]
 #     lower = np.array([0, 48, 80], dtype="uint8")
@@ -26,41 +27,33 @@ from scipy.sparse import spdiags
 #     skinindex = [i for i, j in enumerate(skinMask) if j.sum() > 5]
 #     patches = [patches[i] for i in skinindex]
 #     return patches
-#
+
 
 def preprocess_raw_video(videoFilePath, dim=36):
-    #########################################################################
     # set up
     t = []
     i = 0
     vidObj = cv2.VideoCapture(videoFilePath)
-    totalFrames = int(vidObj.get(cv2.CAP_PROP_FRAME_COUNT))  # get total frame size
+    totalFrames = int(vidObj.get(cv2.CAP_PROP_FRAME_COUNT))
     Xsub = np.zeros((totalFrames, dim, dim, 3), dtype=np.float32)
-    height = vidObj.get(cv2.CAP_PROP_FRAME_HEIGHT)
-    width = vidObj.get(cv2.CAP_PROP_FRAME_WIDTH)
     success, img = vidObj.read()
     rows, cols, _ = img.shape
-    # print("Orignal Height", height)
-    # print("Original width", width)
-    # print("Total number of frames:", totalFrames)
     # face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
-    #########################################################################
     # Crop each frame size into dim x dim
     while success:
-        t.append(vidObj.get(cv2.CAP_PROP_POS_MSEC))  # current timestamp in milisecond
+        t.append(vidObj.get(cv2.CAP_PROP_POS_MSEC))
 
         # # Original From MTTS_CAN
-        # vidLxL = cv2.resize(
-        #     img_as_float(img[:, int(width / 2) - int(height / 2 + 1):int(height / 2) + int(width / 2), :]), (dim, dim),
-        #     interpolation=cv2.INTER_AREA)
+        # vidLxL = cv2.resize(img_as_float(img[:, int(width / 2) - int(height / 2 + 1):int(height / 2) +
+        #                                       int(width / 2), :]), (dim, dim), interpolation=cv2.INTER_AREA)
 
         # # Experimental
         # vidLxL = cv2.resize(img_as_float(img[200:1240, :, :]), (dim, dim), interpolation=cv2.INTER_AREA)
 
         # Without considering the ratio
+
         vidLxL = cv2.resize(img_as_float(img[:, :, :]), (dim, dim), interpolation=cv2.INTER_AREA)
-        # vidLxL = cv2.resize(img_as_float(img[:, :]), (dim, dim), interpolation=cv2.INTER_AREA)
 
         # # Face cropping
         # # Add black edge around each frame of picture
@@ -84,35 +77,31 @@ def preprocess_raw_video(videoFilePath, dim=36):
         # # Original resizing from MTTS_CAN
         # vidLxL = cv2.resize(roi, (dim, dim), interpolation=cv2.INTER_AREA)
 
-        vidLxL = cv2.rotate(vidLxL, cv2.ROTATE_90_CLOCKWISE)  # rotate 90 degree
+        vidLxL = cv2.rotate(vidLxL, cv2.ROTATE_90_CLOCKWISE)
         vidLxL = cv2.cvtColor(vidLxL.astype('float32'), cv2.COLOR_BGR2RGB)
         vidLxL[vidLxL > 1] = 1
         vidLxL[vidLxL < (1 / 255)] = 1 / 255
         Xsub[i, :, :, :] = vidLxL
-        success, img = vidObj.read()  # read the next one
+
+        success, img = vidObj.read()
         i = i + 1
 
-    # # Show a random frame of ROI/Facial Area
-    # n = random.randint(0, i)
-    # plt.imshow(Xsub[n])
-    # plt.show()
-
-    #########################################################################
     # Normalized Frames in the motion branch
     normalized_len = len(t) - 1
     dXsub = np.zeros((normalized_len, dim, dim, 3), dtype=np.float32)
     for j in range(normalized_len - 1):
         dXsub[j, :, :, :] = (Xsub[j + 1, :, :, :] - Xsub[j, :, :, :]) / (Xsub[j + 1, :, :, :] + Xsub[j, :, :, :])
     dXsub = dXsub / np.std(dXsub)
-    #########################################################################
     # Normalize raw frames in the apperance branch
     Xsub = Xsub - np.mean(Xsub)
     Xsub = Xsub / np.std(Xsub)
     Xsub = Xsub[:totalFrames - 1, :, :, :]
-    #########################################################################
     # Plot an example of data after preprocess
     dXsub = np.concatenate((dXsub, Xsub), axis=3)
     return dXsub
+
+
+
 
 def detrend(signal, Lambda):
     """detrend(signal, Lambda) -> filtered_signal
