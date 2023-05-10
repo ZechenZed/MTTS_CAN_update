@@ -332,7 +332,8 @@ def predict_vitals(video_name, dir_path, data_set, filter):
                 HR_gt = [float(contents[start])]
                 length = end - start
                 # pre_HR = prpsd(pulse_pred[0:100], fs, 40, 140)
-                pre_HR = prpsd(pulse_pred[0:100], fs, 60, 100)
+                # pre_HR = prpsd(pulse_pred[0:100], fs, 60, 100)
+                pre_HR = 80
                 for i in range(3, length + 2):
                     if contents[i + start] == contents[i + start - 1]:
                         window_size += 1
@@ -345,26 +346,33 @@ def predict_vitals(video_name, dir_path, data_set, filter):
                         cap = 2 * window_size / fs
                         HR_predicted[i - window_size - 2:i - 2] = filter_fxn(pre_HR, HR_pred_curr, cap)
                         window_size = 1
-                    if i == length:
+                    if i == length + 1:
                         window_size += 1
-                        cap = 2* window_size / fs
+                        cap = 2 * window_size / fs
                         pre_HR = HR_predicted[i - window_size - 3]
                         HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
-                        HR_predicted[i - window_size - 2:i + 1] = filter_fxn(pre_HR, HR_pred_curr, cap)
+                        HR_predicted[i - window_size - 2:dXsub_len] = filter_fxn(pre_HR, HR_pred_curr, cap)
                     try:
                         HR_gt.append(float(contents[i][0:4]))
                     except:
-                        stop = i - 1
-                        HR_predicted = HR_predicted[0:stop - 1]
+                        stop = i
+                        cap = 2 * window_size / fs
+                        pre_HR = HR_predicted[i - window_size - 3]
+                        HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
+                        HR_predicted[i - window_size - 2:dXsub_len] = filter_fxn(pre_HR, HR_pred_curr, cap)
+                        HR_predicted = HR_predicted[0:stop - 2]
                         break
                 HR_gt = np.array(HR_gt)
     else:
         print("choose the correct datatype from: train, valid, test")
 
-    plt.plot(HR_predicted, "b", label="Prediction")
-    plt.plot(HR_gt, "r", label="Ground Truth")
-    plt.legend()
-    plt.show()
+    # plt.plot(HR_predicted, "b", label="Prediction")
+    # plt.plot(HR_gt, "r", label="Ground Truth")
+    # plt.legend()
+    # plt.show()
+    if HR_predicted[-1]== 1:
+        print("warning")
+
     cMAE = sum(abs(HR_predicted - HR_gt)) / dXsub_len
     cRMSE = np.sqrt(sum((abs(HR_predicted - HR_gt)) ** 2) / dXsub_len)
     cR, _ = pearsonr(HR_gt, HR_predicted)
