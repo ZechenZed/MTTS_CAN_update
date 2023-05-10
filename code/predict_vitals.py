@@ -81,17 +81,19 @@ def _calculate_fft_hr(ppg_signal, fs=25, low_pass=0.75, high_pass=2.5):
     fft_hr = np.take(mask_ppg, np.argmax(mask_pxx, 0))[0] * 60
     return fft_hr
 
-def filter_fxn(pre_HR,cur_HR,cap):
-    gap = pre_HR-cur_HR
+
+def filter_fxn(pre_HR, cur_HR, cap):
+    gap = pre_HR - cur_HR
     if abs(gap) < cap:
         return cur_HR
     else:
         return pre_HR - np.sign(gap) * cap * log(abs(gap) + 1)
 
+
 def predict_vitals(video_name, dir_path, data_set, filter):
     img_rows = 36
     img_cols = 36
-    frame_depth = 10
+    frame_depth = 1
     model_checkpoint = "../mtts_can.hdf5"
     batch_size = 10
     fs = 25
@@ -148,31 +150,32 @@ def predict_vitals(video_name, dir_path, data_set, filter):
             end = start + dXsub_len
             # print('Number of ground truth frame:', end - start)
             HR_gt = [float(contents[start])]
-            window_size = 1
 
-            # Cap of increase by logarithm increase
-            pre_HR = prpsd(pulse_pred[0:50], fs, 60, 100)
-            cap = 3
-            for i in range(start + 1, end):
-                if contents[i] == contents[i - 1]:
-                    window_size += 1
-                else:
-                    if HR_predicted[0] != 1.0:
-                        pre_HR = HR_predicted[i - window_size - 3]
-                    HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
-                    HR_predicted[i - window_size - 2:i - 2] = filter_fxn(pre_HR,HR_pred_curr,cap)
-                    window_size = 1
-                if i == end - 1:
-                    window_size += 1
-                    pre_HR = HR_predicted[i - window_size - 3]
-                    HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
-                    HR_predicted[i - window_size - 2:i - 2] = filter_fxn(pre_HR,HR_pred_curr,cap)
-                HR_gt.append(float(contents[i][0:4]))
-            HR_gt = np.array(HR_gt)
+            # # Cap of increase by logarithm increase
+            # window_size = 1
+            # pre_HR = prpsd(pulse_pred[0:100], fs, 40, 140)
+            # cap = 3
+            # for i in range(start + 1, end):
+            #     if contents[i] == contents[i - 1]:
+            #         window_size += 1
+            #     else:
+            #         if HR_predicted[0] != 1.0:
+            #             pre_HR = HR_predicted[i - window_size - 3]
+            #         HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
+            #         HR_predicted[i - window_size - 2:i - 2] = filter_fxn(pre_HR,HR_pred_curr,cap)
+            #         window_size = 1
+            #     if i == end - 1:
+            #         window_size += 1
+            #         pre_HR = HR_predicted[i - window_size - 3]
+            #         HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
+            #         HR_predicted[i - window_size - 2:i - 2] = filter_fxn(pre_HR,HR_pred_curr,cap)
+            #     HR_gt.append(float(contents[i][0:4]))
+            # HR_gt = np.array(HR_gt)
 
-            # # Constant window
-            # pre_HR = prpsd(pulse_pred[0:int(dXsub_len / 4)], fs, 40, 140)
+            # # Constant window - Capping
+            # pre_HR = prpsd(pulse_pred[0:100], fs, 40, 140)
             # window_size = 0
+            # cap = 3
             # for i in range(start + 1, end):
             #     window_size += 1
             #     if window_size == 13:
@@ -181,24 +184,39 @@ def predict_vitals(video_name, dir_path, data_set, filter):
             #         else:
             #             pre_HR = HR_predicted[i - window_size - 3]
             #             HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
-            #         gap = pre_HR - HR_pred_curr
-            #         if gap == 0 : gap = 0.001
-            #         HR_predicted[i - window_size - 2:i - 2] = pre_HR - np.sign(gap) * 3 * log(abs(gap))
+            #         HR_predicted[i - window_size - 2:i - 2] = filter_fxn(pre_HR, HR_pred_curr, cap)
             #         window_size = 0
             #     if i == end - 1:
             #         window_size += 1
             #         pre_HR = HR_predicted[i - window_size - 3]
             #         HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
-            #         gap = pre_HR - HR_pred_curr
-            #         if gap == 0 : gap = 0.001
-            #
-            #         HR_predicted[i - window_size - 2:i + 1] = pre_HR - np.sign(gap) * 3 * log(abs(gap))
+            #         HR_predicted[i - window_size - 2:i + 1] = filter_fxn(pre_HR, HR_pred_curr, cap)
             #     HR_gt.append(float(contents[i][0:4]))
             # HR_gt = np.array(HR_gt)
-        plt.plot(HR_predicted, "b", label="Prediction")
-        plt.plot(HR_gt, "r", label="Ground Truth")
-        plt.legend()
-        plt.show()
+
+            # # Constant window - Previous Knowledge
+            # pre_HR = prpsd(pulse_pred[0:100], fs, 40, 140)
+            # window_size = 0
+            # for i in range(start + 1, end):
+            #     window_size += 1
+            #     if window_size == 15:
+            #         if HR_predicted[0] == 1.0:
+            #             HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
+            #         else:
+            #             HR_pred_curr = prpsd(pulse_pred[i - window_size - 2 - 10:i - 2], fs, 40, 140)
+            #         HR_predicted[i - window_size - 2:i - 2] = HR_pred_curr
+            #         window_size = 0
+            #     if i == end - 1:
+            #         window_size += 1
+            #         HR_pred_curr = prpsd(pulse_pred[i - window_size - 2 - 10:i - 2], fs, 40, 140)
+            #         HR_predicted[i - window_size - 2:i + 1] = HR_pred_curr
+            #     HR_gt.append(float(contents[i][0:4]))
+            # HR_gt = np.array(HR_gt)
+
+        # plt.plot(HR_predicted, "b", label="Prediction")
+        # plt.plot(HR_gt, "r", label="Ground Truth")
+        # plt.legend()
+        # plt.show()
 
     ####################################################################################
     # # Validation Dataset
@@ -302,7 +320,7 @@ def predict_vitals(video_name, dir_path, data_set, filter):
                         break
                 HR_gt = np.array(HR_gt)
         else:
-            # Filtering
+            # Filtering -- cap
             HR_predicted = np.ones(dXsub_len)
             with open("../../Phase2_data/test_set_gt_release.txt") as f:
                 contents = f.read()
@@ -313,8 +331,7 @@ def predict_vitals(video_name, dir_path, data_set, filter):
                 window_size = 1
                 HR_gt = [float(contents[start])]
                 length = end - start
-                pre_HR = 80
-                cap = 3
+                pre_HR = prpsd(pulse_pred[0:100], fs, 40, 140)
                 for i in range(3, length + 2):
                     if contents[i + start] == contents[i + start - 1]:
                         window_size += 1
@@ -324,10 +341,12 @@ def predict_vitals(video_name, dir_path, data_set, filter):
                         else:
                             pre_HR = HR_predicted[i - window_size - 3]
                             HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
+                        cap = 3 * window_size / fs
                         HR_predicted[i - window_size - 2:i - 2] = filter_fxn(pre_HR, HR_pred_curr, cap)
                         window_size = 1
                     if i == length:
                         window_size += 1
+                        cap = 3 * window_size / fs
                         pre_HR = HR_predicted[i - window_size - 3]
                         HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
                         HR_predicted[i - window_size - 2:i - 2] = filter_fxn(pre_HR, HR_pred_curr, cap)
@@ -352,7 +371,7 @@ def predict_vitals(video_name, dir_path, data_set, filter):
 
 
 if __name__ == "__main__":
-    datatype = "Valid"
+    datatype = "Test"
     if datatype != "Test":
         dir_path = "../../Phase1_data/Videos/" + datatype + "/"
     else:
@@ -364,7 +383,8 @@ if __name__ == "__main__":
             res.append(path)
     num_video = len(res)
 
-    results = [Parallel(n_jobs=4)(delayed(predict_vitals)(video[0:-4], dir_path, datatype, True) for video in res[0:50])]
+    results = [Parallel(n_jobs=4)(
+        delayed(predict_vitals)(video[0:-4], dir_path, datatype, filter=True) for video in res[50:100])]
     results = np.array(results)
     MAE = results[0, :, 0]
     RMSE = results[0, :, 1]
