@@ -261,8 +261,8 @@ def predict_vitals(video_name, dir_path, data_set, filter):
                 window_size = 1
                 HR_gt = [float(contents[start])]
                 length = end - start
-                pre_HR = prpsd(pulse_pred[0:100], fs, 40, 140)
-                cap = 3
+                # pre_HR = prpsd(pulse_pred[0:100], fs, 40, 140)
+                pre_HR = 80
                 for i in range(3, length + 2):
                     if contents[i + start] == contents[i + start - 1]:
                         window_size += 1
@@ -272,17 +272,23 @@ def predict_vitals(video_name, dir_path, data_set, filter):
                         else:
                             pre_HR = HR_predicted[i - window_size - 3]
                             HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
+                        cap = 2 * window_size / fs
                         HR_predicted[i - window_size - 2:i - 2] = filter_fxn(pre_HR, HR_pred_curr, cap)
                         window_size = 1
-                    if i == length:
+                    if i == length + 1:
                         window_size += 1
+                        cap = 2 * window_size / fs
                         pre_HR = HR_predicted[i - window_size - 3]
                         HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
-                        HR_predicted[i - window_size - 2:-1] = filter_fxn(pre_HR, HR_pred_curr, cap)
+                        HR_predicted[i - window_size - 2:dXsub_len] = filter_fxn(pre_HR, HR_pred_curr, cap)
                     try:
                         HR_gt.append(float(contents[i][0:4]))
                     except:
                         stop = i - 1
+                        cap = 2 * window_size / fs
+                        pre_HR = HR_predicted[i - window_size - 3]
+                        HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
+                        HR_predicted[i - window_size - 2:dXsub_len] = filter_fxn(pre_HR, HR_pred_curr, cap)
                         HR_predicted = HR_predicted[0:stop - 1]
                         break
                 HR_gt = np.array(HR_gt)
@@ -316,6 +322,8 @@ def predict_vitals(video_name, dir_path, data_set, filter):
                         HR_gt.append(float(contents[i][0:4]))
                     except:
                         stop = i - 1
+                        HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
+                        HR_predicted[i - window_size - 2:i - 2] = HR_pred_curr
                         HR_predicted = HR_predicted[0:stop - 1]
                         break
                 HR_gt = np.array(HR_gt)
@@ -332,7 +340,6 @@ def predict_vitals(video_name, dir_path, data_set, filter):
                 HR_gt = [float(contents[start])]
                 length = end - start
                 # pre_HR = prpsd(pulse_pred[0:100], fs, 40, 140)
-                # pre_HR = prpsd(pulse_pred[0:100], fs, 60, 100)
                 pre_HR = 80
                 for i in range(3, length + 2):
                     if contents[i + start] == contents[i + start - 1]:
@@ -355,12 +362,12 @@ def predict_vitals(video_name, dir_path, data_set, filter):
                     try:
                         HR_gt.append(float(contents[i][0:4]))
                     except:
-                        stop = i
+                        stop = i - 1
                         cap = 2 * window_size / fs
                         pre_HR = HR_predicted[i - window_size - 3]
                         HR_pred_curr = prpsd(pulse_pred[i - window_size - 2:i - 2], fs, 40, 140)
                         HR_predicted[i - window_size - 2:dXsub_len] = filter_fxn(pre_HR, HR_pred_curr, cap)
-                        HR_predicted = HR_predicted[0:stop - 2]
+                        HR_predicted = HR_predicted[0:stop - 1]
                         break
                 HR_gt = np.array(HR_gt)
     else:
@@ -370,9 +377,6 @@ def predict_vitals(video_name, dir_path, data_set, filter):
     # plt.plot(HR_gt, "r", label="Ground Truth")
     # plt.legend()
     # plt.show()
-    if HR_predicted[-1]== 1:
-        print("warning")
-
     cMAE = sum(abs(HR_predicted - HR_gt)) / dXsub_len
     cRMSE = np.sqrt(sum((abs(HR_predicted - HR_gt)) ** 2) / dXsub_len)
     cR, _ = pearsonr(HR_gt, HR_predicted)
@@ -384,7 +388,7 @@ def predict_vitals(video_name, dir_path, data_set, filter):
 
 
 if __name__ == "__main__":
-    datatype = "Test"
+    datatype = "Valid"
     if datatype != "Test":
         dir_path = "../../Phase1_data/Videos/" + datatype + "/"
     else:
@@ -396,8 +400,8 @@ if __name__ == "__main__":
             res.append(path)
     num_video = len(res)
 
-    results = [Parallel(n_jobs=4)(
-        delayed(predict_vitals)(video[0:-4], dir_path, datatype, filter=True) for video in res[0:50])]
+    results = [Parallel(n_jobs=6)(
+        delayed(predict_vitals)(video[0:-4], dir_path, datatype, filter=True) for video in res)]
     results = np.array(results)
     MAE = results[0, :, 0]
     RMSE = results[0, :, 1]
