@@ -114,14 +114,17 @@ def predict_vitals(video_name, dir_path, data_set, filter):
 
     # bandpass filter with range of [0.75, 2.5]
     # [b_pulse, a_pulse] = butter(1, [0.75 / fs * 2, 2.5 / fs * 2], btype='bandpass')
-    [b_pulse, a_pulse] = butter(3, [(40 / 60) / fs * 2, (140 / 60) / fs * 2], btype='bandpass')
-
+    [b_pulse, a_pulse] = butter(1, [(40 / 60) / fs * 2, (140 / 60) / fs * 2], btype='bandpass')
     pulse_pred = filtfilt(b_pulse, a_pulse, np.double(pulse_pred))
 
-    # resp_pred = yptest[1]
-    # resp_pred = detrend(np.cumsum(resp_pred), 100)
+    resp_pred = yptest[1]
+    resp_pred = detrend(np.cumsum(resp_pred), 100)
     # [b_resp, a_resp] = butter(1, [0.08 / fs * 2, 0.5 / fs * 2], btype='bandpass')
-    # resp_pred = scipy.signal.filtfilt(b_resp, a_resp, np.double(resp_pred))
+    [b_resp, a_resp] = butter(1, [0.080 / fs * 2, (40/60) / fs * 2], btype='bandpass')
+    resp_pred = scipy.signal.filtfilt(b_resp, a_resp, np.double(resp_pred))
+    ppg_pred = pulse_pred + resp_pred
+    plt.plot(ppg_pred, "r")
+    plt.show()
 
     # # Customized test
     # for i in range(0, dXsub_len, 15):
@@ -373,10 +376,12 @@ def predict_vitals(video_name, dir_path, data_set, filter):
     else:
         print("choose the correct datatype from: train, valid, test")
 
+    # plt.plot(pulse_pred, "b", label="Prediction")
     # plt.plot(HR_predicted, "b", label="Prediction")
     # plt.plot(HR_gt, "r", label="Ground Truth")
     # plt.legend()
     # plt.show()
+
     cMAE = sum(abs(HR_predicted - HR_gt)) / dXsub_len
     cRMSE = np.sqrt(sum((abs(HR_predicted - HR_gt)) ** 2) / dXsub_len)
     cR, _ = pearsonr(HR_gt, HR_predicted)
@@ -400,20 +405,21 @@ if __name__ == "__main__":
             res.append(path)
     num_video = len(res)
 
-    results = [Parallel(n_jobs=6)(
-        delayed(predict_vitals)(video[0:-4], dir_path, datatype, filter=True) for video in res)]
-    results = np.array(results)
-    MAE = results[0, :, 0]
-    RMSE = results[0, :, 1]
-    PC = results[0, :, 2]
-    print("Average MAE:", mean(MAE))
-    print("Average RMSE:", mean(RMSE))
-    print("Average PC:", mean(PC))
+    # results = [Parallel(n_jobs=6)(
+    #     delayed(predict_vitals)(video[0:-4], dir_path, datatype, filter=True) for video in res)]
+    # results = np.array(results)
+    # MAE = results[0, :, 0]
+    # RMSE = results[0, :, 1]
+    # PC = results[0, :, 2]
 
-    # for i in range(num_video):
-    #     print("Current Video:", res[i])
-    #     video_name = res[i][0:-4]
-    #     MAE, RMSE, PC = predict_vitals(video_name)
+    for i in range(num_video):
+        print("Current Video:", res[i])
+        video_name = res[i][0:-4]
+        MAE, RMSE, PC = predict_vitals(video_name,dir_path, datatype, filter=True)
+
+    # print("Average MAE:", mean(MAE))
+    # print("Average RMSE:", mean(RMSE))
+    # print("Average PC:", mean(PC))
 
     fig1, axs1 = plt.subplots(3, 1, figsize=(10, 7), tight_layout=True)
     axs1[0].hist(MAE, bins=50)
