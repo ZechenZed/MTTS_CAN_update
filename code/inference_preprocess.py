@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import time
 import scipy.io
 from scipy.sparse import spdiags
-from numba import jit
 from timeit import default_timer as timer
 from joblib import Parallel, delayed
 # from numba.typed import List
@@ -39,12 +38,12 @@ def preprocess_raw_video(videoFilePath, dim=36):
     success, img = vidObj.read()
     rows, cols, _ = img.shape
     # face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    if i == 0:
-        image_dtype = img.dtype
-        if image_dtype == 'uint8':
-            bit_depth = 8
-        elif image_dtype == 'uint16':
-            bit_depth = 16
+    # if i == 0:
+    #     image_dtype = img.dtype
+    #     if image_dtype == 'uint8':
+    #         bit_depth = 8
+    #     elif image_dtype == 'uint16':
+    #         bit_depth = 16
     # Crop each frame size into dim x dim
     while success:
         t.append(vidObj.get(cv2.CAP_PROP_POS_MSEC))

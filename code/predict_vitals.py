@@ -103,6 +103,7 @@ def predict_vitals(video_name, dir_path, data_set, filter):
     dXsub = preprocess_raw_video(sample_data_path, dim=36)
     dXsub_len = (dXsub.shape[0] // frame_depth) * frame_depth
     # print("Number of predicted frame:", dXsub_len)
+    print(dXsub.shape)
     dXsub = dXsub[:dXsub_len, :, :, :]
 
     model = MTTS_CAN(frame_depth, 32, 64, (img_rows, img_cols, 3))
