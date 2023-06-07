@@ -9,7 +9,7 @@ from joblib import Parallel, delayed
 import matplotlib
 import matplotlib.pyplot as plt
 
-matplotlib.use('TkAgg', force=True)
+# matplotlib.use('TkAgg', force=True)
 import tensorflow as tf
 from tensorflow import keras
 # from tensorflow.python.keras import optimizers
