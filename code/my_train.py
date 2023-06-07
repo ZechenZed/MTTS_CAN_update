@@ -163,11 +163,17 @@ def preprocess_raw_video(videoFilePath, dim=36):
 
 if __name__ == "__main__":
     # Path setting
-    video_train_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/"
-    video_valid_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/valid/"
-    video_test_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/Videos/test/"
-    BP_phase1_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Ground_truth/BP_raw_1KHz/"
-    BP_test_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/blood_pressure/test_set_bp/"
+    # video_train_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/"
+    # video_valid_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/valid/"
+    # video_test_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/Videos/test/"
+    # BP_phase1_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Ground_truth/BP_raw_1KHz/"
+    # BP_test_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/blood_pressure/test_set_bp/"
+
+    video_train_path = "../../../../edrive2/zechen/Phase1_data/Videos/train/"
+    video_valid_path = "../../../../edrive2/zechen/Phase1_data/Videos/valid/"
+    video_test_path = "../../../../edrive2/zechen/Phase2_data/Videos/test/"
+    BP_phase1_path = "../../../../edrive2/zechen/Phase1_data/Ground_truth/BP_raw_1KHz/"
+    BP_test_path = "../../../../edrive2/zechen/Phase2_data/blood_pressure/test_set_bp/"
 
     # args
     parser = argparse.ArgumentParser()
@@ -204,40 +210,42 @@ if __name__ == "__main__":
     print('Number of devices: {}'.format(strategy.num_replicas_in_sync))
 
     ################################## Train Dataset ###########################################
-    # # Video path reading
-    # train_videos = []
-    # for path in os.listdir(video_train_path):
-    #     if os.path.isfile(os.path.join(video_train_path, path)):
-    #         train_videos.append(path)
-    # num_video = len(train_videos)
-    # print(num_video,train_videos)
+    # Video path reading
+    train_videos = []
+    for path in os.listdir(video_train_path):
+        if os.path.isfile(os.path.join(video_train_path, path)):
+            train_videos.append(path)
+    num_video = len(train_videos)
+    print(num_video,train_videos)
 
-    # # Video Preprocessing
-    # videos = [Parallel(n_jobs=-1)(
-    #     delayed(preprocess_raw_video)(video_train_path + video) for video in train_videos)]
-    # videos = videos[0]
-    # tt_frame = 0
-    # for i in range(num_video):
-    #     tt_frame += videos[i].shape[0] // 10 * 10
-    #
-    # # BP reading and processing
-    # BP_train_path = []
-    # for path in os.listdir(BP_phase1_path):
-    #     if os.path.isfile(os.path.join(BP_phase1_path, path)):
-    #         BP_train_path.append(path)
-    #
-    # frames = np.zeros(shape=(tt_frame, 36, 36, 6))
-    # BP_lf = np.zeros(shape=tt_frame)
-    # frame_ind = 0
-    # for j in range(num_video):
-    #     temp = np.loadtxt(BP_phase1_path + BP_train_path[j])
-    #     cur_frames = videos[j].shape[0] // 10 * 10
-    #     temp_lf = np.zeros(cur_frames)
-    #     frames[frame_ind:frame_ind + cur_frames, :, :, :] = videos[j][0:cur_frames, :, :, :]
-    #     for i in range(0, cur_frames):
-    #         temp_lf[i] = mean(temp[i * 40:(i + 1) * 40])
-    #     BP_lf[frame_ind:frame_ind + cur_frames] = temp_lf
-    #     frame_ind += cur_frames
+    # Video Preprocessing
+    videos = [Parallel(n_jobs=-1)(
+        delayed(preprocess_raw_video)(video_train_path + video) for video in train_videos)]
+    videos = videos[0]
+    tt_frame = 0
+    for i in range(num_video):
+        tt_frame += videos[i].shape[0] // 10 * 10
+
+    # BP reading and processing
+    BP_train_path = []
+    for path in os.listdir(BP_phase1_path):
+        if os.path.isfile(os.path.join(BP_phase1_path, path)):
+            BP_train_path.append(path)
+
+    frames = np.zeros(shape=(tt_frame, 36, 36, 6))
+    BP_lf = np.zeros(shape=tt_frame)
+    frame_ind = 0
+    for j in range(num_video):
+        temp = np.loadtxt(BP_phase1_path + BP_train_path[j])
+        cur_frames = videos[j].shape[0] // 10 * 10
+        temp_lf = np.zeros(cur_frames)
+        frames[frame_ind:frame_ind + cur_frames, :, :, :] = videos[j][0:cur_frames, :, :, :]
+        for i in range(0, cur_frames):
+            temp_lf[i] = mean(temp[i * 40:(i + 1) * 40])
+        BP_lf[frame_ind:frame_ind + cur_frames] = temp_lf
+        frame_ind += cur_frames
+    np.save('../../../../edrive2/zechen/preprocessed_v4v/train_frames.npy', frames)
+    np.save('../../../../edrive2/zechen/preprocessed_v4v/train_BP.npy', BP_lf)
 
     ########################################## Test Dataset ################################################
     # # Video path reading
@@ -277,8 +285,8 @@ if __name__ == "__main__":
 
     # np.save('test_frames.npy', frames)
     # np.save('test_BP.npy', BP_lf)
-    frames = np.load('../../preprocessed_v4v/train_frames.npy')
-    BP_lf = np.load('../../preprocessed_v4v/train_BP.npy')
+    # frames = np.load('../../preprocessed_v4v/train_frames.npy')
+    # BP_lf = np.load('../../preprocessed_v4v/train_BP.npy')
     # frames = np.load('../../preprocessed_v4v/test_frames.npy')
     # BP_lf = np.load('../../preprocessed_v4v/test_BP.npy')
     # # Train 132505 * 6
@@ -291,9 +299,9 @@ if __name__ == "__main__":
     # plt.plot(BP_lf, label="BP downsampled into lower freq")
     # plt.legend()
     # plt.show()
-    for i in range(6):
-        np.save('../../preprocessed_v4v/train_frames_' + str(i) + '.npy', frames[132505 * i:132505 * (i + 1)])
-        np.save('../../preprocessed_v4v/train_BP_' + str(i) + '.npy', BP_lf[132505 * i:132505 * (i + 1)])
+    # for i in range(6):
+    #     np.save('../../preprocessed_v4v/train_frames_' + str(i) + '.npy', frames[132505 * i:132505 * (i + 1)])
+    #     np.save('../../preprocessed_v4v/train_BP_' + str(i) + '.npy', BP_lf[132505 * i:132505 * (i + 1)])
 
     # # Model setup
     # img_rows = 36
