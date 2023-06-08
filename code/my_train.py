@@ -244,8 +244,8 @@ if __name__ == "__main__":
             temp_lf[i] = mean(temp[i * 40:(i + 1) * 40])
         BP_lf[frame_ind:frame_ind + cur_frames] = temp_lf
         frame_ind += cur_frames
-    np.save('../../../../edrive2/zechen/preprocessed_v4v/train_frames.npy', frames)
-    np.save('../../../../edrive2/zechen/preprocessed_v4v/train_BP.npy', BP_lf)
+    np.save('../../../../edrive2/zechenzh/preprocessed_v4v/train_frames.npy', frames)
+    np.save('../../../../edrive2/zechenzh/preprocessed_v4v/train_BP.npy', BP_lf)
 
     ########################################## Test Dataset ################################################
     # # Video path reading
