@@ -30,6 +30,7 @@ from joblib import Parallel, delayed
 
 def preprocess_raw_video(videoFilePath, dim=36):
     # set up
+    print("***********Processing "+videoFilePath+"***********")
     t = []
     i = 0
     vidObj = cv2.VideoCapture(videoFilePath)

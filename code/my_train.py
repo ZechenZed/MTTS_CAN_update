@@ -219,7 +219,7 @@ if __name__ == "__main__":
     print(num_video,train_videos)
 
     # Video Preprocessing
-    videos = [Parallel(n_jobs=-1)(
+    videos = [Parallel(n_jobs=4)(
         delayed(preprocess_raw_video)(video_train_path + video) for video in train_videos)]
     videos = videos[0]
     tt_frame = 0
