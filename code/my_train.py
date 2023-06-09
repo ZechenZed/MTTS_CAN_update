@@ -23,107 +23,9 @@ from tensorflow.python.keras.models import Model
 from skimage.util import img_as_float
 
 from inference_preprocess import preprocess_raw_video
+from model import MTTS_CAN
 
-class Attention_mask(tf.keras.layers.Layer):
-    def call(self, x):
-        xsum = K.sum(x, axis=1, keepdims=True)
-        xsum = K.sum(xsum, axis=2, keepdims=True)
-        xshape = K.int_shape(x)
-        return x / xsum * xshape[1] * xshape[2] * 0.5
-
-    def get_config(self):
-        config = super(Attention_mask, self).get_config()
-        return config
-
-
-class TSM(tf.keras.layers.Layer):
-    def call(self, x, n_frame, fold_div=3):
-        nt, h, w, c = x.shape
-        x = K.reshape(x, (-1, n_frame, h, w, c))
-        fold = c // fold_div
-        last_fold = c - (fold_div - 1) * fold
-        out1, out2, out3 = tf.split(x, [fold, fold, last_fold], axis=-1)
-
-        # Shift left
-        padding_1 = tf.zeros_like(out1)
-        padding_1 = padding_1[:, -1, :, :, :]
-        padding_1 = tf.expand_dims(padding_1, 1)
-        _, out1 = tf.split(out1, [1, n_frame - 1], axis=1)
-        out1 = tf.concat([out1, padding_1], axis=1)
-
-        # Shift right
-        padding_2 = tf.zeros_like(out2)
-        padding_2 = padding_2[:, 0, :, :, :]
-        padding_2 = tf.expand_dims(padding_2, 1)
-        out2, _ = tf.split(out2, [n_frame - 1, 1], axis=1)
-        out2 = tf.concat([padding_2, out2], axis=1)
-
-        out = tf.concat([out1, out2, out3], axis=-1)
-        out = K.reshape(out, (-1, h, w, c))
-
-        return out
-
-    def get_config(self):
-        config = super(TSM, self).get_config()
-        return config
-
-
-def TSM_Cov2D(x, n_frame, nb_filters=128, kernel_size=(3, 3), activation='tanh', padding='same'):
-    x = TSM()(x, n_frame)
-    x = Conv2D(nb_filters, kernel_size, padding=padding, activation=activation)(x)
-    return x
-
-
-def MTTS_CAN(n_frame, nb_filters1, nb_filters2, input_shape, kernel_size=(3, 3), dropout_rate1=0.25,
-             dropout_rate2=0.5, pool_size=(2, 2), nb_dense=128):
-    diff_input = Input(shape=input_shape)
-    rawf_input = Input(shape=input_shape)
-
-    d1 = TSM_Cov2D(diff_input, n_frame, nb_filters1, kernel_size, padding='same', activation='tanh')
-    d2 = TSM_Cov2D(d1, n_frame, nb_filters1, kernel_size, padding='valid', activation='tanh')
-
-    r1 = Conv2D(nb_filters1, kernel_size, padding='same', activation='tanh')(rawf_input)
-    r2 = Conv2D(nb_filters1, kernel_size, activation='tanh')(r1)
-
-    g1 = Conv2D(1, (1, 1), padding='same', activation='sigmoid')(r2)
-    g1 = Attention_mask()(g1)
-    gated1 = multiply([d2, g1])
-
-    d3 = AveragePooling2D(pool_size)(gated1)
-    d4 = Dropout(dropout_rate1)(d3)
-
-    r3 = AveragePooling2D(pool_size)(r2)
-    r4 = Dropout(dropout_rate1)(r3)
-
-    d5 = TSM_Cov2D(d4, n_frame, nb_filters2, kernel_size, padding='same', activation='tanh')
-    d6 = TSM_Cov2D(d5, n_frame, nb_filters2, kernel_size, padding='valid', activation='tanh')
-
-    r5 = Conv2D(nb_filters2, kernel_size, padding='same', activation='tanh')(r4)
-    r6 = Conv2D(nb_filters2, kernel_size, activation='tanh')(r5)
-
-    g2 = Conv2D(1, (1, 1), padding='same', activation='sigmoid')(r6)
-    g2 = Attention_mask()(g2)
-    gated2 = multiply([d6, g2])
-
-    d7 = AveragePooling2D(pool_size)(gated2)
-    d8 = Dropout(dropout_rate1)(d7)
-
-    d9 = Flatten()(d8)
-
-    d10_y = Dense(nb_dense, activation='tanh')(d9)
-    d11_y = Dropout(dropout_rate2)(d10_y)
-    out_y = Dense(1, name='output_1')(d11_y)
-
-    #     d10_r = Dense(nb_dense, activation='tanh')(d9)
-    #     d11_r = Dropout(dropout_rate2)(d10_r)
-    #     out_r = Dense(1, name='output_2')(d11_r)
-
-    #     model = Model(inputs=[diff_input, rawf_input], outputs=[out_y, out_r])
-    model = Model(inputs=[diff_input, rawf_input], outputs=[out_y])
-    return model
-
-
-if __name__ == "__main__":
+def videos_processing(data_type):
     # Path setting
     # video_train_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/"
     # video_valid_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/valid/"
@@ -137,10 +39,153 @@ if __name__ == "__main__":
     BP_phase1_path = "../../../../edrive2/zechenzh/V4V/Phase1_data/Ground_truth/BP_raw_1KHz/"
     BP_test_path = "../../../../edrive2/zechenzh/V4V/Phase2_data/blood_pressure/test_set_bp/"
 
+    if data_type == "train":
+        # Video path reading
+        train_videos = []
+        for path in sorted(os.listdir(video_train_path)):
+            if os.path.isfile(os.path.join(video_train_path, path)):
+                train_videos.append(path)
+        num_video = len(train_videos)
+        print(num_video)
+
+        # # Video processing
+        # videos = [Parallel(n_jobs=4)(
+        #     delayed(preprocess_raw_video)(video_train_path + video) for video in train_videos)]
+        # videos = videos[0]
+
+        videos = []
+        for video in train_videos:
+            videos.append(preprocess_raw_video(video_train_path + video))
+
+        tt_frame = 0
+        for i in range(num_video):
+            tt_frame += videos[i].shape[0] // 10 * 10
+
+        # BP path reading
+        BP_train_path = []
+        for path in sorted(os.listdir(BP_phase1_path)):
+            if os.path.isfile(os.path.join(BP_phase1_path, path)):
+                BP_train_path.append(path)
+
+        # BP & Video frame processing
+        frames = np.zeros(shape=(tt_frame, 36, 36, 6))
+        BP_lf = np.zeros(shape=tt_frame)
+        frame_ind = 0
+        for j in range(num_video):
+            temp = np.loadtxt(BP_phase1_path + BP_train_path[j])
+            cur_frames = videos[j].shape[0] // 10 * 10
+            temp_lf = np.zeros(cur_frames)
+            frames[frame_ind:frame_ind + cur_frames, :, :, :] = videos[j][0:cur_frames, :, :, :]
+            for i in range(0, cur_frames):
+                temp_lf[i] = mean(temp[i * 40:(i + 1) * 40])
+            BP_lf[frame_ind:frame_ind + cur_frames] = temp_lf
+            frame_ind += cur_frames
+
+        # Saving processed frames
+        np.save('../../../../edrive2/zechenzh/preprocessed_v4v/train_frames.npy', frames)
+        np.save('../../../../edrive2/zechenzh/preprocessed_v4v/train_BP.npy', BP_lf)
+    elif data_type == "test":
+        # Video path reading
+        test_videos = []
+        for path in sorted(os.listdir(video_test_path)):
+            if os.path.isfile(os.path.join(video_test_path, path)):
+                test_videos.append(path)
+        num_video = len(test_videos)
+        # print(num_video,train_videos)
+
+        # # Video Preprocessing
+        # videos = [Parallel(n_jobs=-1)(
+        #     delayed(preprocess_raw_video)(video_test_path + video) for video in test_videos)]
+        # videos = videos[0]
+
+        videos = []
+        for video in test_videos:
+            videos.append(preprocess_raw_video(video_test_path + video))
+
+        tt_frame = 0
+        for i in range(num_video):
+            tt_frame += videos[i].shape[0] // 10 * 10
+
+        # BP path reading
+        BP_test = []
+        for path in sorted(os.listdir(BP_test_path)):
+            if os.path.isfile(os.path.join(BP_test_path, path)):
+                BP_test.append(path)
+
+        # BP & Video frames processing
+        frames = np.zeros(shape=(tt_frame, 36, 36, 6))
+        BP_lf = np.zeros(shape=tt_frame)
+        frame_ind = 0
+        for j in range(num_video):
+            temp = np.loadtxt(BP_test_path + BP_test[j])
+            cur_frames = videos[j].shape[0] // 10 * 10
+            temp_lf = np.zeros(cur_frames)
+            frames[frame_ind:frame_ind + cur_frames, :, :, :] = videos[j][0:cur_frames, :, :, :]
+            for i in range(0, cur_frames):
+                temp_lf[i] = mean(temp[i * 40:(i + 1) * 40])
+            BP_lf[frame_ind:frame_ind + cur_frames] = temp_lf
+            frame_ind += cur_frames
+
+        # Save the preprocessed frames
+        np.save('../../../../edrive2/zechenzh/preprocessed_v4v/test_frames.npy', frames)
+        np.save('../../../../edrive2/zechenzh/preprocessed_v4v/test_BP.npy', BP_lf)
+    else:
+        print("Please enter the correct datatype")
+
+def model_train(exp_type):
+    if exp_type == "train":
+        frames = np.load('../../../../edrive2/zechenzh/preprocessed_v4v/train_frames.npy')
+        BP_lf = np.load('../../../../edrive2/zechenzh/preprocessed_v4v/train_BP.npy')
+    else:
+        frames = np.load('../../../../edrive2/zechenzh/preprocessed_v4v/test_frames.npy')
+        BP_lf = np.load('../../../../edrive2/zechenzh/preprocessed_v4v/test_BP.npy')
+    # Train 132505 * 6
+    # frames = frames[132505*5:132505*6]
+    # BP_lf = BP_lf[132505*5:132505*6]
+    # # Test 102090 * 4
+    # frames = frames[102090*3:102090*4]
+    # BP_lf = BP_lf[102090*3:102090*4]
+    # # BP_lf = BP_lf[0:1610]
+    # # plt.plot(BP_lf, label="BP downsampled into lower freq")
+    # # plt.legend()
+    # # plt.show()
+    # for i in range(6):
+    #     np.save('../../preprocessed_v4v/train_frames_' + str(i) + '.npy', frames[132505 * i:132505 * (i + 1)])
+    #     np.save('../../preprocessed_v4v/train_BP_' + str(i) + '.npy', BP_lf[132505 * i:132505 * (i + 1)])
+
+    # Model setup
+    img_rows = 36
+    img_cols = 36
+    frame_depth = 1
+    input_shape = (img_rows, img_cols, 3)
+    print('Using MTTS_CAN!')
+
+    # Create a callback that saves the model's weights
+    model = MTTS_CAN(frame_depth, args.nb_filters1, args.nb_filters2, input_shape,
+                     dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2, nb_dense=args.nb_dense)
+    losses = tf.keras.losses.MeanAbsoluteError()
+    loss_weights = {"output_1": 1.0}
+    opt = "adadelta"
+    model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
+    if exp_type == "test":
+        model.load_weights('../checkpoints/my_mtts.hdf5')
+        model.evaluate(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=32)
+    else:
+        save_best_callback = ModelCheckpoint(filepath="../checkpoints/my_mtts.hdf5", save_best_only=True, verbose=1)
+        early_stop = tf.keras.callbacks.EarlyStopping(monitor=losses, patience=10)
+        history = model.fit(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, validation_split=0.2,
+                            batch_size=128,
+                            epochs=20, callbacks=[save_best_callback, early_stop], verbose=1, shuffle=False)
+
+
+
+if __name__ == "__main__":
     # args
     parser = argparse.ArgumentParser()
-    parser.add_argument('-exp', '--exp_type', type=str, default='test',
-                        help='experiment type')
+    parser.add_argument('-exp', '--exp_type', type=str, default='model',
+                        help='experiment type: model or video')
+    parser.add_argument('-data', '--data_type', type=str, default='test',
+                        help='data type')
     parser.add_argument('-t', '--task', type=int, default=0,
                         help='the order of exp')
     parser.add_argument('-i', '--data_dir', type=str,
@@ -169,133 +214,6 @@ if __name__ == "__main__":
     # tf.config.experimental.set_memory_growth(physical_devices[0], enable=True)
     # tf.keras.backend.clear_session()
     # strategy = tf.distribute.MirroredStrategy()
-    # print('Number of devices: {}'.format(strategy.num_replicas_in_sync))
+    # print('Number of devices: {}'.format(strategy.num_replicas_in_sync)
 
-    ################################## Train Dataset ###########################################
-    # # Video path reading
-    # train_videos = []
-    # for path in sorted(os.listdir(video_train_path)):
-    #     if os.path.isfile(os.path.join(video_train_path, path)):
-    #         train_videos.append(path)
-    # num_video = len(train_videos)
-    # print(num_video)
-    #
-    # # Video Preprocessing
-    # # videos = [Parallel(n_jobs=4)(
-    # #     delayed(preprocess_raw_video)(video_train_path + video) for video in train_videos)]
-    # videos = []
-    # for video in train_videos:
-    #     videos.append(preprocess_raw_video(video_train_path + video))
-    # # videos = videos[0]
-    # # print(videos.shape)
-    # tt_frame = 0
-    # for i in range(num_video):
-    #     tt_frame += videos[i].shape[0] // 10 * 10
-    #
-    # # BP reading and processing
-    # BP_train_path = []
-    # for path in sorted(os.listdir(BP_phase1_path)):
-    #     if os.path.isfile(os.path.join(BP_phase1_path, path)):
-    #         BP_train_path.append(path)
-    #
-    # frames = np.zeros(shape=(tt_frame, 36, 36, 6))
-    # BP_lf = np.zeros(shape=tt_frame)
-    # frame_ind = 0
-    # for j in range(num_video):
-    #     temp = np.loadtxt(BP_phase1_path + BP_train_path[j])
-    #     cur_frames = videos[j].shape[0] // 10 * 10
-    #     temp_lf = np.zeros(cur_frames)
-    #     frames[frame_ind:frame_ind + cur_frames, :, :, :] = videos[j][0:cur_frames, :, :, :]
-    #     for i in range(0, cur_frames):
-    #         temp_lf[i] = mean(temp[i * 40:(i + 1) * 40])
-    #     BP_lf[frame_ind:frame_ind + cur_frames] = temp_lf
-    #     frame_ind += cur_frames
-    # np.save('../../../../edrive2/zechenzh/preprocessed_v4v/train_frames.npy', frames)
-    # np.save('../../../../edrive2/zechenzh/preprocessed_v4v/train_BP.npy', BP_lf)
-
-    ########################################## Test Dataset ################################################
-    # Video path reading
-    test_videos = []
-    for path in sorted(os.listdir(video_test_path)):
-        if os.path.isfile(os.path.join(video_test_path, path)):
-            test_videos.append(path)
-    num_video = len(test_videos)
-    # print(num_video,train_videos)
-
-    # Video Preprocessing
-    # videos = [Parallel(n_jobs=-1)(
-    #     delayed(preprocess_raw_video)(video_test_path + video) for video in test_videos)]
-    # videos = videos[0]
-
-    videos = []
-    for video in test_videos:
-        videos.append(preprocess_raw_video(video_test_path + video))
-
-    tt_frame = 0
-    for i in range(num_video):
-        tt_frame += videos[i].shape[0] // 10 * 10
-
-    # BP reading and processing
-    BP_test = []
-    for path in sorted(os.listdir(BP_test_path)):
-        if os.path.isfile(os.path.join(BP_test_path, path)):
-            BP_test.append(path)
-
-    frames = np.zeros(shape=(tt_frame, 36, 36, 6))
-    BP_lf = np.zeros(shape=tt_frame)
-    frame_ind = 0
-    for j in range(num_video):
-        temp = np.loadtxt(BP_test_path + BP_test[j])
-        cur_frames = videos[j].shape[0] // 10 * 10
-        temp_lf = np.zeros(cur_frames)
-        frames[frame_ind:frame_ind + cur_frames, :, :, :] = videos[j][0:cur_frames, :, :, :]
-        for i in range(0, cur_frames):
-            temp_lf[i] = mean(temp[i * 40:(i + 1) * 40])
-        BP_lf[frame_ind:frame_ind + cur_frames] = temp_lf
-        frame_ind += cur_frames
-    np.save('../../../../edrive2/zechenzh/preprocessed_v4v/test_frames.npy', frames)
-    np.save('../../../../edrive2/zechenzh/preprocessed_v4v/test_BP.npy', BP_lf)
-    # np.save('test_frames.npy', frames)
-    # np.save('test_BP.npy', BP_lf)
-
-    # frames = np.load('../../preprocessed_v4v/train_frames.npy')
-    # BP_lf = np.load('../../preprocessed_v4v/train_BP.npy')
-    # frames = np.load('../../preprocessed_v4v/test_frames.npy')
-    # BP_lf = np.load('../../preprocessed_v4v/test_BP.npy')
-    # # Train 132505 * 6
-    # frames = frames[132505*5:132505*6]
-    # BP_lf = BP_lf[132505*5:132505*6]
-    # Test 102090 * 4
-    # frames = frames[102090*3:102090*4]
-    # BP_lf = BP_lf[102090*3:102090*4]
-    # BP_lf = BP_lf[0:1610]
-    # plt.plot(BP_lf, label="BP downsampled into lower freq")
-    # plt.legend()
-    # plt.show()
-    # for i in range(6):
-    #     np.save('../../preprocessed_v4v/train_frames_' + str(i) + '.npy', frames[132505 * i:132505 * (i + 1)])
-    #     np.save('../../preprocessed_v4v/train_BP_' + str(i) + '.npy', BP_lf[132505 * i:132505 * (i + 1)])
-
-    # # Model setup
-    # img_rows = 36
-    # img_cols = 36
-    # frame_depth = 1
-    # input_shape = (img_rows, img_cols, 3)
-    # print('Using MTTS_CAN!')
-    #
-    # # Create a callback that saves the model's weights
-    # model = MTTS_CAN(frame_depth, args.nb_filters1, args.nb_filters2, input_shape,
-    #                  dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2, nb_dense=args.nb_dense)
-    # losses = tf.keras.losses.MeanAbsoluteError()
-    # loss_weights = {"output_1": 1.0}
-    # opt = "adadelta"
-    # model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
-    # if args.exp_type == "test":
-    #     model.load_weights('../checkpoints/my_mtts.hdf5')
-    #     model.evaluate(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=32)
-    # else:
-    #     save_best_callback = ModelCheckpoint(filepath="../checkpoints/my_mtts.hdf5", save_best_only=True, verbose=1)
-    #     early_stop = tf.keras.callbacks.EarlyStopping(monitor=losses, patience=10)
-    #     history = model.fit(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, validation_split=0.2,
-    #                         batch_size=128,
-    #                         epochs=20, callbacks=[save_best_callback, early_stop], verbose=1, shuffle=False)
+    model_train(exp_type=args.exp_type)

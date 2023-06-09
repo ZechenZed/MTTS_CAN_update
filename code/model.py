@@ -247,7 +247,7 @@ def MTTS_CAN(n_frame, nb_filters1, nb_filters2, input_shape, kernel_size=(3, 3),
     # out_r = Dense(1, name='output_2')(d11_r)
 
     # model = Model(inputs=[diff_input, rawf_input], outputs=[out_y, out_r])
-    model = Model(inputs=[diff_input, rawf_input], outputs=out_y)
+    model = Model(inputs=[diff_input, rawf_input], outputs=[out_y])
     return model
 
 
