@@ -125,17 +125,17 @@ def MTTS_CAN(n_frame, nb_filters1, nb_filters2, input_shape, kernel_size=(3, 3),
 
 if __name__ == "__main__":
     # Path setting
-    video_train_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/"
-    video_valid_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/valid/"
-    video_test_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/Videos/test/"
-    BP_phase1_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Ground_truth/BP_raw_1KHz/"
-    BP_test_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/blood_pressure/test_set_bp/"
+    # video_train_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/"
+    # video_valid_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/valid/"
+    # video_test_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/Videos/test/"
+    # BP_phase1_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Ground_truth/BP_raw_1KHz/"
+    # BP_test_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/blood_pressure/test_set_bp/"
 
-    # video_train_path = "../../../../edrive2/zechenzh/V4V/Phase1_data/Videos/train/"
-    # video_valid_path = "../../../../edrive2/zechenzh/V4V/Phase1_data/Videos/valid/"
-    # video_test_path = "../../../../edrive2/zechenzh/V4V/Phase2_data/Videos/test/"
-    # BP_phase1_path = "../../../../edrive2/zechenzh/V4V/Phase1_data/Ground_truth/BP_raw_1KHz/"
-    # BP_test_path = "../../../../edrive2/zechenzh/V4V/Phase2_data/blood_pressure/test_set_bp/"
+    video_train_path = "../../../../edrive2/zechenzh/V4V/Phase1_data/Videos/train/"
+    video_valid_path = "../../../../edrive2/zechenzh/V4V/Phase1_data/Videos/valid/"
+    video_test_path = "../../../../edrive2/zechenzh/V4V/Phase2_data/Videos/test/"
+    BP_phase1_path = "../../../../edrive2/zechenzh/V4V/Phase1_data/Ground_truth/BP_raw_1KHz/"
+    BP_test_path = "../../../../edrive2/zechenzh/V4V/Phase2_data/blood_pressure/test_set_bp/"
 
     # args
     parser = argparse.ArgumentParser()
