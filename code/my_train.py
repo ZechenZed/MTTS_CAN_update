@@ -22,6 +22,7 @@ from tensorflow.python.keras.models import Model
 
 from skimage.util import img_as_float
 
+from inference_preprocess import preprocess_raw_video
 
 class Attention_mask(tf.keras.layers.Layer):
     def call(self, x):
@@ -122,58 +123,19 @@ def MTTS_CAN(n_frame, nb_filters1, nb_filters2, input_shape, kernel_size=(3, 3),
     return model
 
 
-def preprocess_raw_video(videoFilePath, dim=36):
-    # set up
-    t = []
-    i = 0
-    vidObj = cv2.VideoCapture(videoFilePath)
-    totalFrames = int(vidObj.get(cv2.CAP_PROP_FRAME_COUNT))
-    Xsub = np.zeros((totalFrames, dim, dim, 3), dtype=np.float32)
-    success, img = vidObj.read()
-    rows, cols, _ = img.shape
-    # face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    # Crop each frame size into dim x dim
-    while success:
-        t.append(vidObj.get(cv2.CAP_PROP_POS_MSEC))
-        vidLxL = cv2.resize(img_as_float(img[:, :, :]), (dim, dim), interpolation=cv2.INTER_AREA)
-        vidLxL = cv2.rotate(vidLxL, cv2.ROTATE_90_CLOCKWISE)
-        vidLxL = cv2.cvtColor(vidLxL.astype('float32'), cv2.COLOR_BGR2RGB)
-        vidLxL[vidLxL > 1] = 1
-        vidLxL[vidLxL < (1 / 255)] = 1 / 255
-        Xsub[i, :, :, :] = vidLxL
-
-        success, img = vidObj.read()
-        i = i + 1
-
-    # Normalized Frames in the motion branch
-    normalized_len = len(t) - 1
-    dXsub = np.zeros((normalized_len, dim, dim, 3), dtype=np.float32)
-    for j in range(normalized_len - 1):
-        dXsub[j, :, :, :] = (Xsub[j + 1, :, :, :] - Xsub[j, :, :, :]) / (Xsub[j + 1, :, :, :] + Xsub[j, :, :, :])
-    dXsub = dXsub / np.std(dXsub)
-
-    # Normalize raw frames in the apperance branch
-    Xsub = Xsub - np.mean(Xsub)
-    Xsub = Xsub / np.std(Xsub)
-    Xsub = Xsub[:totalFrames - 1, :, :, :]
-    # Plot an example of data after preprocess
-    dXsub = np.concatenate((dXsub, Xsub), axis=3)
-    return dXsub
-
-
 if __name__ == "__main__":
     # Path setting
-    # video_train_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/"
-    # video_valid_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/valid/"
-    # video_test_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/Videos/test/"
-    # BP_phase1_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Ground_truth/BP_raw_1KHz/"
-    # BP_test_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/blood_pressure/test_set_bp/"
+    video_train_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/"
+    video_valid_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/valid/"
+    video_test_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/Videos/test/"
+    BP_phase1_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Ground_truth/BP_raw_1KHz/"
+    BP_test_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/blood_pressure/test_set_bp/"
 
-    video_train_path = "../../../../edrive2/zechenzh/V4V/Phase1_data/Videos/train/"
-    video_valid_path = "../../../../edrive2/zechenzh/V4V/Phase1_data/Videos/valid/"
-    video_test_path = "../../../../edrive2/zechenzh/V4V/Phase2_data/Videos/test/"
-    BP_phase1_path = "../../../../edrive2/zechenzh/V4V/Phase1_data/Ground_truth/BP_raw_1KHz/"
-    BP_test_path = "../../../../edrive2/zechenzh/V4V/Phase2_data/blood_pressure/test_set_bp/"
+    # video_train_path = "../../../../edrive2/zechenzh/V4V/Phase1_data/Videos/train/"
+    # video_valid_path = "../../../../edrive2/zechenzh/V4V/Phase1_data/Videos/valid/"
+    # video_test_path = "../../../../edrive2/zechenzh/V4V/Phase2_data/Videos/test/"
+    # BP_phase1_path = "../../../../edrive2/zechenzh/V4V/Phase1_data/Ground_truth/BP_raw_1KHz/"
+    # BP_test_path = "../../../../edrive2/zechenzh/V4V/Phase2_data/blood_pressure/test_set_bp/"
 
     # args
     parser = argparse.ArgumentParser()
@@ -216,12 +178,16 @@ if __name__ == "__main__":
         if os.path.isfile(os.path.join(video_train_path, path)):
             train_videos.append(path)
     num_video = len(train_videos)
-    print(num_video,train_videos)
+    print(num_video)
 
     # Video Preprocessing
-    videos = [Parallel(n_jobs=4)(
-        delayed(preprocess_raw_video)(video_train_path + video) for video in train_videos)]
-    videos = videos[0]
+    # videos = [Parallel(n_jobs=4)(
+    #     delayed(preprocess_raw_video)(video_train_path + video) for video in train_videos)]
+    videos = []
+    for video in train_videos:
+        videos.append(preprocess_raw_video(video_train_path + video))
+    # videos = videos[0]
+    # print(videos.shape)
     tt_frame = 0
     for i in range(num_video):
         tt_frame += videos[i].shape[0] // 10 * 10
