@@ -228,11 +228,11 @@ if __name__ == "__main__":
     # videos = videos[0]
 
     videos = []
-    for video in test_videos:
+    for video in test_videos[0:2]:
         videos.append(preprocess_raw_video(video_test_path + video))
 
     tt_frame = 0
-    for i in range(num_video):
+    for i in range(2):
         tt_frame += videos[i].shape[0] // 10 * 10
 
     # BP reading and processing
