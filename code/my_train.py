@@ -174,7 +174,7 @@ if __name__ == "__main__":
     ################################## Train Dataset ###########################################
     # Video path reading
     train_videos = []
-    for path in os.listdir(video_train_path):
+    for path in sorted(os.listdir(video_train_path)):
         if os.path.isfile(os.path.join(video_train_path, path)):
             train_videos.append(path)
     num_video = len(train_videos)
@@ -194,7 +194,7 @@ if __name__ == "__main__":
 
     # BP reading and processing
     BP_train_path = []
-    for path in os.listdir(BP_phase1_path):
+    for path in sorted(os.listdir(BP_phase1_path)):
         if os.path.isfile(os.path.join(BP_phase1_path, path)):
             BP_train_path.append(path)
 
@@ -216,7 +216,7 @@ if __name__ == "__main__":
     ########################################## Test Dataset ################################################
     # # Video path reading
     # test_videos = []
-    # for path in os.listdir(video_test_path):
+    # for path in sorted(os.listdir(video_test_path)):
     #     if os.path.isfile(os.path.join(video_test_path, path)):
     #         test_videos.append(path)
     # num_video = len(test_videos)
@@ -232,7 +232,7 @@ if __name__ == "__main__":
     #
     # # BP reading and processing
     # BP_test = []
-    # for path in os.listdir(BP_test_path):
+    # for path in sorted(os.listdir(BP_test_path)):
     #     if os.path.isfile(os.path.join(BP_test_path, path)):
     #         BP_test.append(path)
     #
