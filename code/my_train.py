@@ -1,4 +1,6 @@
 import os
+os.environ["CUDA_VISIBLE_DEVICES"] ="7"
+
 import cv2
 import glob
 import json
@@ -25,7 +27,8 @@ from skimage.util import img_as_float
 from inference_preprocess import preprocess_raw_video
 from model import MTTS_CAN
 
-def videos_processing(data_type):
+
+def data_processing(data_type):
     # Path setting
     # video_train_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/"
     # video_valid_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/valid/"
@@ -132,6 +135,7 @@ def videos_processing(data_type):
     else:
         print("Please enter the correct datatype")
 
+
 def model_train(exp_type):
     if exp_type == "train":
         frames = np.load('../../../../edrive2/zechenzh/preprocessed_v4v/train_frames.npy')
@@ -178,7 +182,6 @@ def model_train(exp_type):
                             epochs=20, callbacks=[save_best_callback, early_stop], verbose=1, shuffle=False)
 
 
-
 if __name__ == "__main__":
     # args
     parser = argparse.ArgumentParser()
@@ -215,5 +218,7 @@ if __name__ == "__main__":
     # tf.keras.backend.clear_session()
     # strategy = tf.distribute.MirroredStrategy()
     # print('Number of devices: {}'.format(strategy.num_replicas_in_sync)
-
-    model_train(exp_type=args.exp_type)
+    if args.exp_type == "model":
+        model_train(exp_type=args.exp_type)
+    else:
+        data_processing(data_type=args.data_type)
