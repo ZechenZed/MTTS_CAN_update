@@ -176,10 +176,10 @@ def model_train(exp_type):
         model.evaluate(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=32)
     else:
         save_best_callback = ModelCheckpoint(filepath="../checkpoints/my_mtts.hdf5", save_best_only=True, verbose=1)
-        early_stop = tf.keras.callbacks.EarlyStopping(monitor=losses, patience=10)
+        # early_stop = tf.keras.callbacks.EarlyStopping(monitor=losses, patience=10)
         history = model.fit(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, validation_split=0.2,
                             batch_size=128,
-                            epochs=20, callbacks=[save_best_callback, early_stop], verbose=1, shuffle=False)
+                            epochs=20, callbacks=[save_best_callback], verbose=1, shuffle=False)
 
 
 if __name__ == "__main__":
