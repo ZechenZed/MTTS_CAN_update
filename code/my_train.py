@@ -171,13 +171,13 @@ def data_processing_2(data_type, device_type):
         num_video = len(train_videos)
 
         videos = []
-        if device_type == "local":
-            videos = [Parallel(n_jobs=6)(
-                delayed(preprocess_raw_video)(video_train_path + video) for video in train_videos)]
-            videos = videos[0]
-        else:
-            for video in train_videos:
-                videos.append(preprocess_raw_video(video_train_path + video))
+        # if device_type == "local":
+        videos = [Parallel(n_jobs=4)(
+            delayed(preprocess_raw_video)(video_train_path + video) for video in train_videos)]
+        videos = videos[0]
+        # else:
+        #     for video in train_videos:
+        #         videos.append(preprocess_raw_video(video_train_path + video))
 
         # BP path reading
         BP_train_path = []
