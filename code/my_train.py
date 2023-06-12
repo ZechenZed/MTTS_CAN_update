@@ -28,7 +28,7 @@ from skimage.util import img_as_float
 from inference_preprocess import preprocess_raw_video
 from model import MTTS_CAN
 
-
+# BP --> 25 Hz
 def data_processing_1(data_type, device_type):
     if device_type == "local":
         video_train_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/"
@@ -146,7 +146,7 @@ def data_processing_1(data_type, device_type):
     else:
         print("Please enter the correct datatype")
 
-
+# Video --> 1000Hz
 def data_processing_2(data_type, device_type):
     if device_type == "local":
         video_train_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/"
@@ -169,11 +169,9 @@ def data_processing_2(data_type, device_type):
                 train_videos.append(path)
         # train_videos = train_videos[0:2]
         num_video = len(train_videos)
-        print(num_video)
 
         videos = []
         if device_type == "local":
-            # Video processing
             videos = [Parallel(n_jobs=6)(
                 delayed(preprocess_raw_video)(video_train_path + video) for video in train_videos)]
             videos = videos[0]
@@ -228,7 +226,6 @@ def data_processing_2(data_type, device_type):
             if os.path.isfile(os.path.join(video_test_path, path)):
                 test_videos.append(path)
         num_video = len(test_videos)
-        # print(num_video,train_videos)
 
         videos = []
         if device_type == "local":
@@ -240,37 +237,45 @@ def data_processing_2(data_type, device_type):
             for video in test_videos:
                 videos.append(preprocess_raw_video(video_test_path + video))
 
-        tt_frame = 0
-        for i in range(num_video):
-            tt_frame += videos[i].shape[0] // 10 * 10
-
         # BP path reading
-        BP_test = []
+        BP_test_path = []
         for path in sorted(os.listdir(BP_test_path)):
             if os.path.isfile(os.path.join(BP_test_path, path)):
-                BP_test.append(path)
+                BP_test_path.append(path)
 
-        # BP & Video frames processing
+        BP_lf = []
+        tt_frame = 0
+        frame_video = []
+        for i in range(num_video):
+            BP_temp = np.loadtxt(BP_test_path + BP_test_path[i])
+            cur_frames = BP_temp.shape[0] // 1000 * 1000
+            frame_video.append(cur_frames)
+            tt_frame += cur_frames
+            BP_temp_med = medfilt(BP_temp[0:cur_frames])
+            for ind, element in enumerate(BP_temp_med):
+                BP_lf.append(element)
+        BP_lf = np.array(BP_lf)
+
+        # BP & Video frame processing
         frames = np.zeros(shape=(tt_frame, 36, 36, 6))
-        BP_lf = np.zeros(shape=tt_frame)
+
         frame_ind = 0
-        for j in range(num_video):
-            temp = np.loadtxt(BP_test_path + BP_test[j])
-            cur_frames = videos[j].shape[0] // 10 * 10
-            temp_lf = np.zeros(cur_frames)
-            frames[frame_ind:frame_ind + cur_frames, :, :, :] = videos[j][0:cur_frames, :, :, :]
-            for i in range(0, cur_frames):
-                temp_lf[i] = mean(temp[i * 40:(i + 1) * 40])
-            BP_lf[frame_ind:frame_ind + cur_frames] = temp_lf
+        for i in range(num_video):
+            temp_video = videos[i]
+            cur_frames = frame_video[i]
+            temp_video_expand = np.zeros(shape=(cur_frames, 36, 36, 6))
+            for j in range(0, int(cur_frames / 40)):
+                temp_video_expand[40 * j:40 * (j + 1), :, :, :] = temp_video[j, :, :, :]
+            frames[frame_ind:frame_ind + cur_frames] = temp_video_expand
             frame_ind += cur_frames
 
-        # Save the preprocessed frames
         if device_type == "remote":
+            # Saving processed frames
             np.save('../../../../edrive2/zechenzh/preprocessed_v4v/test_frames_v2.npy', frames)
             np.save('../../../../edrive2/zechenzh/preprocessed_v4v/test_BP_v2.npy', BP_lf)
         else:
-            np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/train_frames_v2.npy', frames)
-            np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/train_BP_v2.npy', BP_lf)
+            np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/test_frames_v2.npy', frames)
+            np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/test_BP_v2.npy', BP_lf)
     else:
         print("Please enter the correct datatype")
 
