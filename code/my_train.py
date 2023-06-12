@@ -168,17 +168,12 @@ def data_processing_2(data_type, device_type):
             if os.path.isfile(os.path.join(video_train_path, path)):
                 train_videos.append(path)
         # train_videos = train_videos[0:2]
-        train_videos = train_videos[0:10]
         num_video = len(train_videos)
 
-        videos = []
-        # if device_type == "local":
-        videos = [Parallel(n_jobs=4)(
+        # Video processing
+        videos = [Parallel(n_jobs=12)(
             delayed(preprocess_raw_video)(video_train_path + video) for video in train_videos)]
         videos = videos[0]
-        # else:
-        #     for video in train_videos:
-        #         videos.append(preprocess_raw_video(video_train_path + video))
 
         # BP path reading
         BP_train_path = []
@@ -201,12 +196,12 @@ def data_processing_2(data_type, device_type):
 
         # BP & Video frame processing
         frames = np.zeros(shape=(tt_frame, 36, 36, 6))
-
         frame_ind = 0
         for i in range(num_video):
             temp_video = videos[i]
             cur_frames = frame_video[i]
             temp_video_expand = np.zeros(shape=(cur_frames, 36, 36, 6))
+
             for j in range(0, int(cur_frames / 40)):
                 temp_video_expand[40 * j:40 * (j + 1), :, :, :] = temp_video[j, :, :, :]
             frames[frame_ind:frame_ind+cur_frames] = temp_video_expand
@@ -228,15 +223,10 @@ def data_processing_2(data_type, device_type):
                 test_videos.append(path)
         num_video = len(test_videos)
 
-        videos = []
-        if device_type == "local":
-            # Video Preprocessing
-            videos = [Parallel(n_jobs=6)(
-                delayed(preprocess_raw_video)(video_test_path + video) for video in test_videos)]
-            videos = videos[0]
-        else:
-            for video in test_videos:
-                videos.append(preprocess_raw_video(video_test_path + video))
+        # Video processing
+        videos = [Parallel(n_jobs=12)(
+            delayed(preprocess_raw_video)(video_test_path + video) for video in test_videos)]
+        videos = videos[0]
 
         # BP path reading
         BP_test_path = []
