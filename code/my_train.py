@@ -216,7 +216,7 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2, drop
     if device_type == "local":
         path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
     else:
-        path = "../checkpoints/"
+        path = "../../checkpoints/"
     if data_type == "test":
         model.load_weights(path + 'my_mtts.hdf5')
         model.evaluate(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=32)
