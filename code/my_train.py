@@ -168,6 +168,7 @@ def data_processing_2(data_type, device_type):
             if os.path.isfile(os.path.join(video_train_path, path)):
                 train_videos.append(path)
         # train_videos = train_videos[0:2]
+        train_videos = train_videos[0:10]
         num_video = len(train_videos)
 
         videos = []
