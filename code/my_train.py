@@ -274,10 +274,10 @@ if __name__ == "__main__":
     # for i in range(4):
     #     np.save('C:/Users/Zed/Desktop\Project-BMFG/preprocessed_v4v/train_frames_' + str(i) + '.npy', test_frames[132505 * i:132505 * (i + 1)])
     #     np.save('C:/Users/Zed/Desktop\Project-BMFG/preprocessed_v4v/train_BP_' + str(i) + '.npy', test_BP[132505 * i:132505 * (i + 1)])
-
-    if args.exp_type == "model":
-        model_train(data_type=args.data_type, device_type=args.device_type,
-                    task_num=3, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
-                    dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2, nb_dense=args.nb_dense)
-    else:
-        data_processing_2(data_type=args.data_type, device_type=args.device_type, task_num=args.task)
+    print(os.listdir())
+    # if args.exp_type == "model":
+    #     model_train(data_type=args.data_type, device_type=args.device_type,
+    #                 task_num=3, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
+    #                 dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2, nb_dense=args.nb_dense)
+    # else:
+    #     data_processing_2(data_type=args.data_type, device_type=args.device_type, task_num=args.task)
