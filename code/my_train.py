@@ -167,7 +167,7 @@ def data_processing_2(data_type, device_type):
         for path in sorted(os.listdir(video_train_path)):
             if os.path.isfile(os.path.join(video_train_path, path)):
                 train_videos.append(path)
-        train_videos = train_videos[0:2]
+        # train_videos = train_videos[0:2]
         num_video = len(train_videos)
         print(num_video)
 
@@ -204,7 +204,6 @@ def data_processing_2(data_type, device_type):
         frames = np.zeros(shape=(tt_frame, 36, 36, 6))
 
         frame_ind = 0
-
         for i in range(num_video):
             temp_video = videos[i]
             cur_frames = frame_video[i]
@@ -212,15 +211,16 @@ def data_processing_2(data_type, device_type):
             for j in range(0, int(cur_frames / 40)):
                 temp_video_expand[40 * j:40 * (j + 1), :, :, :] = temp_video[j, :, :, :]
             frames[frame_ind:frame_ind+cur_frames] = temp_video_expand
-        print(frames[0:40][0][0][0])
+            frame_ind += cur_frames
 
-        # if device_type == "remote":
-        # # Saving processed frames
-        #     np.save('../../../../edrive2/zechenzh/preprocessed_v4v/train_frames.npy', frames)
-        #     np.save('../../../../edrive2/zechenzh/preprocessed_v4v/train_BP.npy', BP_lf)
-        # else:
-        #     np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/train_frames.npy', frames)
-        #     np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/train_BP.npy', BP_lf)
+        if device_type == "remote":
+        # Saving processed frames
+            np.save('../../../../edrive2/zechenzh/preprocessed_v4v/train_frames_v2.npy', frames)
+            np.save('../../../../edrive2/zechenzh/preprocessed_v4v/train_BP_v2.npy', BP_lf)
+        else:
+            np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/train_frames_v2.npy', frames)
+            np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/train_BP_v2.npy', BP_lf)
+
     elif data_type == "test":
         # Video path reading
         test_videos = []
@@ -266,11 +266,11 @@ def data_processing_2(data_type, device_type):
 
         # Save the preprocessed frames
         if device_type == "remote":
-            np.save('../../../../edrive2/zechenzh/preprocessed_v4v/test_frames.npy', frames)
-            np.save('../../../../edrive2/zechenzh/preprocessed_v4v/test_BP.npy', BP_lf)
+            np.save('../../../../edrive2/zechenzh/preprocessed_v4v/test_frames_v2.npy', frames)
+            np.save('../../../../edrive2/zechenzh/preprocessed_v4v/test_BP_v2.npy', BP_lf)
         else:
-            np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/train_frames.npy', frames)
-            np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/train_BP.npy', BP_lf)
+            np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/train_frames_v2.npy', frames)
+            np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/train_BP_v2.npy', BP_lf)
     else:
         print("Please enter the correct datatype")
 
