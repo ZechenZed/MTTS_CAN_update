@@ -216,7 +216,7 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2, drop
     if device_type == "local":
         path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
     else:
-        path = "../../checkpoints/"
+        path = "checkpoints/"
     if data_type == "test":
         model.load_weights(path + 'my_mtts.hdf5')
         model.evaluate(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=32)
@@ -274,7 +274,7 @@ if __name__ == "__main__":
     # for i in range(4):
     #     np.save('C:/Users/Zed/Desktop\Project-BMFG/preprocessed_v4v/train_frames_' + str(i) + '.npy', test_frames[132505 * i:132505 * (i + 1)])
     #     np.save('C:/Users/Zed/Desktop\Project-BMFG/preprocessed_v4v/train_BP_' + str(i) + '.npy', test_BP[132505 * i:132505 * (i + 1)])
-    print(os.listdir())
+    print(os.listdir("checkpoints/"))
     # if args.exp_type == "model":
     #     model_train(data_type=args.data_type, device_type=args.device_type,
     #                 task_num=3, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
