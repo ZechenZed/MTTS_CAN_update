@@ -225,7 +225,7 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2, drop
         model.load_weights(path + 'my_mtts_v2.hdf5')
         model.evaluate(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=32)
     else:
-        if os.listdir(path):
+        if 'my_mtts_v2.hdf5' in os.listdir(path):
             print("************Continue training************")
             model.load_weights(path + 'my_mtts_v2.hdf5')
         save_best_callback = ModelCheckpoint(filepath=path + "my_mtts_v2.hdf5", save_best_only=True, verbose=1)
