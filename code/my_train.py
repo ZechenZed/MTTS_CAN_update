@@ -178,14 +178,13 @@ def data_processing_2(data_type, device_type, task_num):
 
 
 def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2, dropout_rate1, dropout_rate2, nb_dense):
+    path = ""
     if device_type == "local":
-        frames = np.load('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/'
-                         + data_type + '_frames_' + str(task_num) + '.npy')
-        BP_lf = np.load('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/'
-                        + data_type + '_BP_' + str(task_num) + '.npy')
+        path = 'C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/'
     else:
-        frames = np.load('../../../../edrive2/zechenzh/preprocessed_v4v/' + data_type + '_frames' + '.npy')
-        BP_lf = np.load('../../../../edrive2/zechenzh/preprocessed_v4v/' + data_type + '_BP.npy')
+        path = '../../../../edrive2/zechenzh'
+    frames = np.load(path + data_type + '_frames_' + str(task_num) + '.npy')
+    BP_lf = np.load(path + data_type + '_BP_'+ str(task_num) + '.npy')
 
     # Train 132505 * 6
     # frames = frames[132505*5:132505*6]
@@ -277,16 +276,16 @@ if __name__ == "__main__":
     #     np.save('C:/Users/Zed/Desktop\Project-BMFG/preprocessed_v4v/train_frames_' + str(i) + '.npy', test_frames[132505 * i:132505 * (i + 1)])
     #     np.save('C:/Users/Zed/Desktop\Project-BMFG/preprocessed_v4v/train_BP_' + str(i) + '.npy', test_BP[132505 * i:132505 * (i + 1)])
 
-    path = '../../edrive2/zechenzh/preprocessed_v4v/'
-    frames = np.load(path+'train_frames.npy')
-    BP = np.load(path+'train_BP.npy')
-    for i in range(6):
-        np.save(path+'train_frames_' + str(i) + '.npy', frames[132505 * i:132505 * (i + 1)])
-        np.save(path+'train_BP_' + str(i) + '.npy', BP[132505 * i:132505 * (i + 1)])
+    # path = '../../edrive2/zechenzh/preprocessed_v4v/'
+    # frames = np.load(path+'train_frames.npy')
+    # BP = np.load(path+'train_BP.npy')
+    # for i in range(6):
+    #     np.save(path+'train_frames_' + str(i) + '.npy', frames[132505 * i:132505 * (i + 1)])
+    #     np.save(path+'train_BP_' + str(i) + '.npy', BP[132505 * i:132505 * (i + 1)])
 
-    # if args.exp_type == "model":
-    #     model_train(data_type=args.data_type, device_type=args.device_type,
-    #                 task_num=0, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
-    #                 dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2, nb_dense=args.nb_dense)
-    # else:
-    #     data_processing_2(data_type=args.data_type, device_type=args.device_type, task_num=args.task)
+    if args.exp_type == "model":
+        model_train(data_type=args.data_type, device_type=args.device_type,
+                    task_num=0, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
+                    dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2, nb_dense=args.nb_dense)
+    else:
+        data_processing_2(data_type=args.data_type, device_type=args.device_type, task_num=args.task)
