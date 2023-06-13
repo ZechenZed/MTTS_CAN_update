@@ -1,5 +1,6 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] ="7"
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "7"
 
 import cv2
 import glob
@@ -230,7 +231,7 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2, drop
         save_best_callback = ModelCheckpoint(filepath=path + "my_mtts.hdf5", save_best_only=True, verbose=1)
         # early_stop = tf.keras.callbacks.EarlyStopping(monitor=losses, patience=10)
         history = model.fit(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=64, validation_split=0.1,
-                            epochs=3*4, callbacks=[save_best_callback], verbose=1, shuffle=False)
+                            epochs=3 * 4, callbacks=[save_best_callback], verbose=1, shuffle=False)
 
 
 if __name__ == "__main__":
@@ -278,16 +279,24 @@ if __name__ == "__main__":
     #     np.save('C:/Users/Zed/Desktop\Project-BMFG/preprocessed_v4v/train_frames_' + str(i) + '.npy', test_frames[132505 * i:132505 * (i + 1)])
     #     np.save('C:/Users/Zed/Desktop\Project-BMFG/preprocessed_v4v/train_BP_' + str(i) + '.npy', test_BP[132505 * i:132505 * (i + 1)])
 
-    # path = '../../edrive2/zechenzh/preprocessed_v4v/'
-    # frames = np.load(path+'train_frames.npy')
-    # BP = np.load(path+'train_BP.npy')
-    # for i in range(6):
-    #     np.save(path+'train_frames_' + str(i) + '.npy', frames[132505 * i:132505 * (i + 1)])
-    #     np.save(path+'train_BP_' + str(i) + '.npy', BP[132505 * i:132505 * (i + 1)])
+    path = '../../edrive2/zechenzh/preprocessed_v4v/'
+    frames = np.load(path + 'train_frames.npy')
+    BP = np.load(path + 'train_BP.npy')
+    for i in range(6):
+        np.save(path + 'train_frames_' + str(i) + '.npy', frames[132505 * i:132505 * (i + 1)])
+        np.save(path + 'train_BP_' + str(i) + '.npy', BP[132505 * i:132505 * (i + 1)])
 
-    if args.exp_type == "model":
-        model_train(data_type=args.data_type, device_type=args.device_type,
-                    task_num=0, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
-                    dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2, nb_dense=args.nb_dense)
-    else:
-        data_processing_2(data_type=args.data_type, device_type=args.device_type, task_num=args.task)
+    path = '../../edrive2/zechenzh/preprocessed_v4v/'
+    BP = np.load(path + 'train_BP.npy')
+    tt_frame = int(BP.shape[0] / 40)
+    BP_batch = np.zeros((tt_frame, 40))
+    for i in range(tt_frame):
+        BP_batch[i, :] = BP[40 * i:40 * (i + 1)]
+    np.save()
+
+    # if args.exp_type == "model":
+    #     model_train(data_type=args.data_type, device_type=args.device_type,
+    #                 task_num=0, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
+    #                 dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2, nb_dense=args.nb_dense)
+    # else:
+    #     data_processing_2(data_type=args.data_type, device_type=args.device_type, task_num=args.task)
