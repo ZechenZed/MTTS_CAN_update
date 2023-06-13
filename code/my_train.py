@@ -182,7 +182,7 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2, drop
     if device_type == "local":
         path = 'C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/'
     else:
-        path = '../../../../edrive2/zechenzh'
+        path = '../../edrive2/zechenzh'
     frames = np.load(path + data_type + '_frames_' + str(task_num) + '.npy')
     BP_lf = np.load(path + data_type + '_BP_'+ str(task_num) + '.npy')
 
