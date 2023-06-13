@@ -183,8 +183,10 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2, drop
         path = 'C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/'
     else:
         path = '/edrive2/zechenzh/preprocessed_v4v/'
-    frames = np.load(path + data_type + '_frames_' + str(task_num) + '.npy')
-    BP_lf = np.load(path + data_type + '_BP_'+ str(task_num) + '.npy')
+    # frames = np.load(path + data_type + '_frames_' + str(task_num) + '.npy')
+    # BP_lf = np.load(path + data_type + '_BP_'+ str(task_num) + '.npy')
+    frames = np.load(path + data_type + '_frames.npy')
+    BP_lf = np.load(path + data_type + '_BP.npy')
 
     # Train 132505 * 6
     # frames = frames[132505*5:132505*6]
