@@ -228,8 +228,8 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2, drop
             model.load_weights(path + 'my_mtts.hdf5')
         save_best_callback = ModelCheckpoint(filepath=path + "my_mtts.hdf5", save_best_only=True, verbose=1)
         # early_stop = tf.keras.callbacks.EarlyStopping(monitor=losses, patience=10)
-        history = model.fit(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=32, validation_split=0.1,
-                            epochs=20, callbacks=[save_best_callback], verbose=1, shuffle=False)
+        history = model.fit(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=64, validation_split=0.1,
+                            epochs=3*4, callbacks=[save_best_callback], verbose=1, shuffle=False)
 
 
 if __name__ == "__main__":
@@ -279,7 +279,7 @@ if __name__ == "__main__":
 
     if args.exp_type == "model":
         model_train(data_type=args.data_type, device_type=args.device_type,
-                    task_num=3, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
+                    task_num=0, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
                     dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2, nb_dense=args.nb_dense)
     else:
         data_processing_2(data_type=args.data_type, device_type=args.device_type, task_num=args.task)
