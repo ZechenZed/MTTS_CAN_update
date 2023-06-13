@@ -240,9 +240,9 @@ def data_processing_3(data_type, device_type):
 
     # Saving processed frames
     if device_type == "remote":
-        np.save('../../../../edrive2/zechenzh/preprocessed_v4v/' + data_type + '_BP_v3.npy', BP_lf)
+        np.save('/../../edrive2/zechenzh/preprocessed_v4v/' + data_type + '_BP_v3.npy', BP_v3)
     else:
-        np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_BP_v3.npy', BP_lf)
+        np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_BP_v3.npy', BP_v3)
 
 
 def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2, dropout_rate1, dropout_rate2, nb_dense):
