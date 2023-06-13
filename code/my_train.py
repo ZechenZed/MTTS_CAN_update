@@ -224,7 +224,7 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2, drop
         model.evaluate(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=32)
     else:
         if os.listdir(path):
-            print("Continue training")
+            print("************Continue training************")
             model.load_weights(path + 'my_mtts.hdf5')
         save_best_callback = ModelCheckpoint(filepath=path + "my_mtts.hdf5", save_best_only=True, verbose=1)
         # early_stop = tf.keras.callbacks.EarlyStopping(monitor=losses, patience=10)
@@ -277,9 +277,16 @@ if __name__ == "__main__":
     #     np.save('C:/Users/Zed/Desktop\Project-BMFG/preprocessed_v4v/train_frames_' + str(i) + '.npy', test_frames[132505 * i:132505 * (i + 1)])
     #     np.save('C:/Users/Zed/Desktop\Project-BMFG/preprocessed_v4v/train_BP_' + str(i) + '.npy', test_BP[132505 * i:132505 * (i + 1)])
 
-    if args.exp_type == "model":
-        model_train(data_type=args.data_type, device_type=args.device_type,
-                    task_num=0, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
-                    dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2, nb_dense=args.nb_dense)
-    else:
-        data_processing_2(data_type=args.data_type, device_type=args.device_type, task_num=args.task)
+    path = '../../edrive2/zechenzh/preprocessed_v4v/'
+    frames = np.load(path+'train_frames.npy')
+    BP = np.load(path+'train_BP.npy')
+    for i in range(6):
+        np.save(path+'train_frames_' + str(i) + '.npy', frames[132505 * i:132505 * (i + 1)])
+        np.save(path+'train_BP_' + str(i) + '.npy', BP[132505 * i:132505 * (i + 1)])
+
+    # if args.exp_type == "model":
+    #     model_train(data_type=args.data_type, device_type=args.device_type,
+    #                 task_num=0, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
+    #                 dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2, nb_dense=args.nb_dense)
+    # else:
+    #     data_processing_2(data_type=args.data_type, device_type=args.device_type, task_num=args.task)
