@@ -61,7 +61,7 @@ def data_processing_1(data_type, device_type):
     num_video = len(video_file_path)
     print(num_video)
 
-    videos = [Parallel(n_jobs=12)(
+    videos = [Parallel(n_jobs=-1)(
         delayed(preprocess_raw_video)(video_folder_path + video) for video in video_file_path)]
     videos = videos[0]
 
@@ -127,10 +127,11 @@ def data_processing_2(data_type, device_type, task_num):
     for path in sorted(os.listdir(video_folder_path)):
         if os.path.isfile(os.path.join(video_folder_path, path)):
             video_file_path.append(path)
+    video_file_path = video_file_path[0:10]
     num_video = len(video_file_path)
 
     # Video processing
-    videos = [Parallel(n_jobs=12)(
+    videos = [Parallel(n_jobs=-1)(
         delayed(preprocess_raw_video)(video_folder_path + video) for video in video_file_path)]
     videos = videos[0]
 
@@ -173,6 +174,7 @@ def data_processing_2(data_type, device_type, task_num):
     else:
         np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_frames_v2.npy', frames)
         np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_BP_v2.npy', BP_lf)
+    print("###########Preprocess finished###########")
 
 
 def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2, dropout_rate1, dropout_rate2, nb_dense):
