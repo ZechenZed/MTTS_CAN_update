@@ -279,20 +279,22 @@ if __name__ == "__main__":
     #     np.save('C:/Users/Zed/Desktop\Project-BMFG/preprocessed_v4v/train_frames_' + str(i) + '.npy', test_frames[132505 * i:132505 * (i + 1)])
     #     np.save('C:/Users/Zed/Desktop\Project-BMFG/preprocessed_v4v/train_BP_' + str(i) + '.npy', test_BP[132505 * i:132505 * (i + 1)])
 
-    path = '../../edrive2/zechenzh/preprocessed_v4v/'
-    frames = np.load(path + 'train_frames.npy')
-    BP = np.load(path + 'train_BP.npy')
-    for i in range(6):
-        np.save(path + 'train_frames_' + str(i) + '.npy', frames[132505 * i:132505 * (i + 1)])
-        np.save(path + 'train_BP_' + str(i) + '.npy', BP[132505 * i:132505 * (i + 1)])
+    # path = '../../edrive2/zechenzh/preprocessed_v4v/'
+    # frames = np.load(path + 'train_frames.npy')
+    # BP = np.load(path + 'train_BP.npy')
+    # for i in range(6):
+    #     np.save(path + 'train_frames_' + str(i) + '.npy', frames[132505 * i:132505 * (i + 1)])
+    #     np.save(path + 'train_BP_' + str(i) + '.npy', BP[132505 * i:132505 * (i + 1)])
 
+    # path = 'C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/'
     path = '../../edrive2/zechenzh/preprocessed_v4v/'
     BP = np.load(path + 'train_BP.npy')
     tt_frame = int(BP.shape[0] / 40)
     BP_batch = np.zeros((tt_frame, 40))
     for i in range(tt_frame):
         BP_batch[i, :] = BP[40 * i:40 * (i + 1)]
-    np.save()
+    print(BP_batch.shape)
+    np.save(path+'train_BP_v2.npy',BP_batch)
 
     # if args.exp_type == "model":
     #     model_train(data_type=args.data_type, device_type=args.device_type,
