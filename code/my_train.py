@@ -297,8 +297,8 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2, drop
             model.load_weights(path + 'my_mtts_v3.hdf5')
         save_best_callback = ModelCheckpoint(filepath=path + "my_mtts_v3.hdf5", save_best_only=True, verbose=1)
         # early_stop = tf.keras.callbacks.EarlyStopping(monitor=losses, patience=10)
-        history = model.fit(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=64, validation_split=0.1,
-                            epochs=3 * 4, callbacks=[save_best_callback], verbose=1, shuffle=False)
+        history = model.fit(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=32, validation_split=0.1,
+                            epochs=20, callbacks=[save_best_callback], verbose=1, shuffle=False)
 
 
 if __name__ == "__main__":
