@@ -376,5 +376,5 @@ if __name__ == "__main__":
                     dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2, nb_dense=args.nb_dense,
                     nb_batch=args.nb_batch, nb_epoch=args.nb_epoch)
     else:
-        data_processing_2(data_type=args.data_type, device_type=args.device_type, task_num=args.task)
+        data_processing_1(data_type=args.data_type, device_type=args.device_type)
     # data_processing_3(data_type=args.data_type, device_type=args.device_type)
