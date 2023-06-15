@@ -365,10 +365,10 @@ if __name__ == "__main__":
     # print(BP_batch.shape)
     # np.save(path+'train_BP_v2.npy',BP_batch)
 
-    if args.exp_type == "model":
-        model_train(data_type=args.data_type, device_type=args.device_type,
-                    task_num=0, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
-                    dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2, nb_dense=args.nb_dense)
-    else:
-        data_processing_2(data_type=args.data_type, device_type=args.device_type, task_num=args.task)
-    # data_processing_3(data_type=args.data_type, device_type=args.device_type)
+    # if args.exp_type == "model":
+    #     model_train(data_type=args.data_type, device_type=args.device_type,
+    #                 task_num=0, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
+    #                 dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2, nb_dense=args.nb_dense)
+    # else:
+    #     data_processing_2(data_type=args.data_type, device_type=args.device_type, task_num=args.task)
+    data_processing_3(data_type=args.data_type, device_type=args.device_type)
