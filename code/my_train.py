@@ -254,6 +254,8 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
         path = '/edrive2/zechenzh/preprocessed_v4v/'
     # frames = np.load(path + data_type + '_frames_' + str(task_num) + '.npy')
     # BP_lf = np.load(path + data_type + '_BP_'+ str(task_num) + '.npy')
+    valid_frames = np.load(path+"_frames.npy")
+    valid_BP = np.load(path+"_BP_v3.npy")
     frames = np.load(path + data_type + '_frames.npy')
     BP_lf = np.load(path + data_type + '_BP_v3.npy')
 
@@ -370,11 +372,11 @@ if __name__ == "__main__":
     # print(BP_batch.shape)
     # np.save(path+'train_BP_v2.npy',BP_batch)
 
-    if args.exp_type == "model":
-        model_train(data_type=args.data_type, device_type=args.device_type,
-                    task_num=0, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
-                    dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2, nb_dense=args.nb_dense,
-                    nb_batch=args.nb_batch, nb_epoch=args.nb_epoch)
-    else:
-        data_processing_1(data_type=args.data_type, device_type=args.device_type)
-    # data_processing_3(data_type=args.data_type, device_type=args.device_type)
+    # if args.exp_type == "model":
+    #     model_train(data_type=args.data_type, device_type=args.device_type,
+    #                 task_num=0, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
+    #                 dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2, nb_dense=args.nb_dense,
+    #                 nb_batch=args.nb_batch, nb_epoch=args.nb_epoch)
+    # else:
+    #     data_processing_1(data_type=args.data_type, device_type=args.device_type)
+    data_processing_3(data_type=args.data_type, device_type=args.device_type)
