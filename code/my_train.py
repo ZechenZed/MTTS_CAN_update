@@ -254,8 +254,9 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
         path = '/edrive2/zechenzh/preprocessed_v4v/'
     # frames = np.load(path + data_type + '_frames_' + str(task_num) + '.npy')
     # BP_lf = np.load(path + data_type + '_BP_'+ str(task_num) + '.npy')
-    valid_frames = np.load(path+"_frames.npy")
-    valid_BP = np.load(path+"_BP_v3.npy")
+    valid_frames = np.load(path+"valid_frames.npy")
+    valid_BP = np.load(path+"valid_BP_v3.npy")
+    valid_data = [valid_frames,valid_BP]
     frames = np.load(path + data_type + '_frames.npy')
     BP_lf = np.load(path + data_type + '_BP_v3.npy')
 
@@ -303,7 +304,7 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
         # early_stop = tf.keras.callbacks.EarlyStopping(monitor=losses, patience=10)
         history = model.fit(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=nb_batch,
                             validation_split=0.1, epochs=nb_epoch, callbacks=[save_best_callback],
-                            verbose=1, shuffle=False)
+                            verbose=1, shuffle=False, validation_data=valid_data)
 
 
 if __name__ == "__main__":
