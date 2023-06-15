@@ -374,7 +374,7 @@ if __name__ == "__main__":
         model_train(data_type=args.data_type, device_type=args.device_type,
                     task_num=0, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
                     dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2, nb_dense=args.nb_dense,
-                    nb_batch=arg.nb_batch, nb_epoch=args.nb_epoch)
+                    nb_batch=args.nb_batch, nb_epoch=args.nb_epoch)
     else:
         data_processing_2(data_type=args.data_type, device_type=args.device_type, task_num=args.task)
     # data_processing_3(data_type=args.data_type, device_type=args.device_type)
