@@ -313,12 +313,12 @@ if __name__ == "__main__":
                         help='data type')
     parser.add_argument('-device', '--device_type', type=str, default='local',
                         help='device type')
-    parser.add_argument('-t', '--task', type=int, default=0,
-                        help='the order of exp')
-    parser.add_argument('-i', '--data_dir', type=str,
-                        help='Location for the dataset')
-    parser.add_argument('-o', '--save_dir', type=str, default='./rPPG-checkpoints',
-                        help='Location for parameter checkpoints and samples')
+    # parser.add_argument('-t', '--task', type=int, default=0,
+    #                     help='the order of exp')
+    # parser.add_argument('-i', '--data_dir', type=str,
+    #                     help='Location for the dataset')
+    # parser.add_argument('-o', '--save_dir', type=str, default='./rPPG-checkpoints',
+    #                     help='Location for parameter checkpoints and samples')
     parser.add_argument('-a', '--nb_filters1', type=int, default=32,
                         help='number of convolutional filters to use')
     parser.add_argument('-b', '--nb_filters2', type=int, default=64,
