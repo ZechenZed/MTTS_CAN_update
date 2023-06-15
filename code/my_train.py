@@ -210,7 +210,7 @@ def data_processing_3(data_type, device_type):
     num_video = len(video_file_path)
     print(num_video)
 
-    videos = [Parallel(n_jobs=12)(
+    videos = [Parallel(n_jobs=96)(
         delayed(preprocess_raw_video)(video_folder_path + video) for video in video_file_path)]
     videos = videos[0]
 
