@@ -235,7 +235,7 @@ def data_processing_3(data_type, device_type):
         frames[frame_ind:frame_ind + cur_frames, :, :, :] = videos[j][0:cur_frames, :, :, :]
         for i in range(0, cur_frames):
             temp_BP[i, :] = temp[40 * i:40 * (i + 1)]
-        BP_v3[frame_ind:frame_ind + cur_frames,:] = temp_BP
+        BP_v3[frame_ind:frame_ind + cur_frames, :] = temp_BP
         frame_ind += cur_frames
 
     # Saving processed frames
@@ -254,9 +254,9 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
         path = '/edrive2/zechenzh/preprocessed_v4v/'
     # frames = np.load(path + data_type + '_frames_' + str(task_num) + '.npy')
     # BP_lf = np.load(path + data_type + '_BP_'+ str(task_num) + '.npy')
-    valid_frames = np.load(path+"valid_frames.npy")
-    valid_BP = np.load(path+"valid_BP_v3.npy")
-    valid_data = [valid_frames,valid_BP]
+    valid_frames = np.load(path + "valid_frames.npy")
+    valid_BP = np.load(path + "valid_BP_v3.npy")
+    valid_data = [valid_frames, valid_BP]
     frames = np.load(path + data_type + '_frames.npy')
     BP_lf = np.load(path + data_type + '_BP_v3.npy')
 
@@ -293,14 +293,14 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
     else:
         path = "checkpoints/"
     if data_type == "test":
-        model.load_weights(path + 'my_mtts_v3_nbdense_'+str(nb_dense)+'.hdf5')
+        model.load_weights(path + 'my_mtts_v3_best_nbdense_' + str(nb_dense) + '.hdf5')
         model.evaluate(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=nb_batch)
     else:
         # if 'my_mtts_v3.hdf5' in os.listdir(path):
         #     print("************Continue training************")
         #     model.load_weights(path + 'my_mtts_v3.hdf5')
-        save_best_callback = ModelCheckpoint(filepath=path + 'my_mtts_v3_nbdense_'+str(nb_dense)+'.hdf5',
-                                             save_best_only=False, verbose=1)
+        save_best_callback = ModelCheckpoint(filepath=path + 'my_mtts_v3_best_nbdense_' + str(nb_dense) + '.hdf5',
+                                             save_best_only=True, verbose=1)
         # early_stop = tf.keras.callbacks.EarlyStopping(monitor=losses, patience=10)
         history = model.fit(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=nb_batch,
                             validation_split=0.1, epochs=nb_epoch, callbacks=[save_best_callback],
