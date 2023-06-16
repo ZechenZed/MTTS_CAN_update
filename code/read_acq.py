@@ -10,9 +10,9 @@ def read_acq(file_path):
     plt.figure(figsize=(20, 15))
     for i in range(len(data.channels)):
         chan = data.channels[i]
-        if chan.name == "Resp1":
+        if "PulseRatePPG" in chan.name:
             plt.plot(chan.data, label='{}({})'.format(chan.name, chan.units))
-        break
+
     plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=1,
                mode='expand', borderaxespad=0.)
     plt.show()

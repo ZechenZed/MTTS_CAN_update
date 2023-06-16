@@ -1,6 +1,6 @@
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "6,7"
+os.environ["CUDA_VISIBLE_DEVICES"] = "5,6,7"
 
 import cv2
 import glob
@@ -246,7 +246,7 @@ def data_processing_3(data_type, device_type):
 
 
 def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
-                dropout_rate1, dropout_rate2, nb_dense, nb_batch, nb_epoch):
+                dropout_rate1, dropout_rate2, nb_dense, nb_batch, nb_epoch, multiprocess):
     path = ""
     if device_type == "local":
         path = 'C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/'
@@ -282,8 +282,9 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
     print('Using MTTS_CAN!')
 
     # Create a callback that saves the model's weights
-    model = MTTS_CAN(frame_depth, nb_filters1, args.nb_filters2, input_shape,
-                     dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2, nb_dense=args.nb_dense)
+    model = MTTS_CAN(frame_depth, nb_filters1, nb_filters2, input_shape,
+                     dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
+                     nb_dense=nb_dense)
     losses = tf.keras.losses.MeanAbsoluteError()
     loss_weights = {"output_1": 1.0}
     opt = "adadelta"
@@ -304,7 +305,8 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
         # early_stop = tf.keras.callbacks.EarlyStopping(monitor=losses, patience=10)
         history = model.fit(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=nb_batch,
                             validation_split=0.1, epochs=nb_epoch, callbacks=[save_best_callback],
-                            verbose=1, shuffle=False, validation_data=valid_data)
+                            verbose=1, shuffle=False, validation_data=valid_data,
+                            use_multiprocessing=multiprocess)
 
 
 if __name__ == "__main__":
@@ -338,6 +340,8 @@ if __name__ == "__main__":
                         help='nb_epoch')
     parser.add_argument('--nb_batch', type=int, default=32,
                         help='nb_batch')
+    parser.add_argument('--multiprocess', type=bool, default=False,
+                        help='Use multiprocess or not')
     args = parser.parse_args()
     print('input args:\n', json.dumps(vars(args), indent=4, separators=(',', ':')))  # pretty print args
 
@@ -377,7 +381,7 @@ if __name__ == "__main__":
         model_train(data_type=args.data_type, device_type=args.device_type,
                     task_num=0, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
                     dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2, nb_dense=args.nb_dense,
-                    nb_batch=args.nb_batch, nb_epoch=args.nb_epoch)
+                    nb_batch=args.nb_batch, nb_epoch=args.nb_epoch, multiprocess=args.multiprocess)
     else:
         data_processing_1(data_type=args.data_type, device_type=args.device_type)
     # data_processing_3(data_type=args.data_type, device_type=args.device_type)
