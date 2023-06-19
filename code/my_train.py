@@ -285,7 +285,7 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
     model = MTTS_CAN(frame_depth, nb_filters1, nb_filters2, input_shape,
                      dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
                      nb_dense=nb_dense)
-    losses = tf.keras.losses.Poisson()
+    losses = tf.keras.losses.MeanSquaredError()
     loss_weights = {"output_1": 1.0}
     opt = "adadelta"
     model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
