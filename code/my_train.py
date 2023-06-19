@@ -256,7 +256,7 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
     # BP_lf = np.load(path + data_type + '_BP_'+ str(task_num) + '.npy')
     valid_frames = np.load(path + "valid_frames.npy")
     valid_BP = np.load(path + "valid_BP_v3.npy")
-    valid_data = [(valid_frames[:, :, :, :3], valid_frames[:, :, :, -3:]), valid_BP]
+    valid_data = ((valid_frames[:, :, :, :3], valid_frames[:, :, :, -3:]), valid_BP)
     frames = np.load(path + data_type + '_frames.npy')
     BP_lf = np.load(path + data_type + '_BP_v3.npy')
 
