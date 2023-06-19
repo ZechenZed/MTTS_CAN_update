@@ -285,7 +285,7 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
     model = MTTS_CAN(frame_depth, nb_filters1, nb_filters2, input_shape,
                      dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
                      nb_dense=nb_dense)
-    losses = tf.keras.losses.MeanAbsoluteError()
+    losses = tf.keras.losses.Poisson()
     loss_weights = {"output_1": 1.0}
     opt = "adadelta"
     model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
@@ -294,17 +294,16 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
     else:
         path = "checkpoints/"
     if data_type == "test":
-        model.load_weights(path + 'my_mtts_v3_best_nbdense_' + str(nb_dense) + '.hdf5')
+        model.load_weights(path + 'mtts_poisson.hdf5')
         model.evaluate(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=nb_batch)
     else:
         # if 'my_mtts_v3.hdf5' in os.listdir(path):
         #     print("************Continue training************")
         #     model.load_weights(path + 'my_mtts_v3.hdf5')
-        save_best_callback = ModelCheckpoint(filepath=path + 'my_mtts_v3_best_nbdense_' + str(nb_dense) + '.hdf5',
-                                             save_best_only=True, verbose=1)
+        save_best_callback = ModelCheckpoint(filepath=path + 'mtts_poisson.hdf5', save_best_only=True, verbose=1)
         # early_stop = tf.keras.callbacks.EarlyStopping(monitor=losses, patience=10)
         history = model.fit(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=nb_batch,
-                            validation_split=0.1, epochs=nb_epoch, callbacks=[save_best_callback],
+                            epochs=nb_epoch, callbacks=[save_best_callback],
                             verbose=1, shuffle=False, validation_data=valid_data,
                             use_multiprocessing=multiprocess)
 
