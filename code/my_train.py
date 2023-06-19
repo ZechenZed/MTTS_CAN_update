@@ -1,6 +1,6 @@
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "5,6,7"
+os.environ["CUDA_VISIBLE_DEVICES"] = "6,7"
 
 import cv2
 import glob
@@ -210,7 +210,7 @@ def data_processing_3(data_type, device_type):
     num_video = len(video_file_path)
     print(num_video)
 
-    videos = [Parallel(n_jobs=96)(
+    videos = [Parallel(n_jobs=-1)(
         delayed(preprocess_raw_video)(video_folder_path + video) for video in video_file_path)]
     videos = videos[0]
 
