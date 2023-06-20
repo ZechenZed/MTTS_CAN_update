@@ -30,8 +30,8 @@ def data_processing_1(data_type, device_type, dim=48):
         video_valid_path = "/edrive2/zechenzh/V4V/Phase1_data/Videos/valid/"
         video_test_path = "/edrive2/zechenzh/V4V/Phase2_data/Videos/test/"
         BP_phase1_path = "/edrive2/zechenzh/V4V/Phase1_data/Ground_truth/BP_raw_1KHz/"
-        BP_val_path = "/edrive2/zechenzh/Phase2_data/blood_pressure/val_set_bp/"
-        BP_test_path = "/edrive2/zechenzh//Phase2_data/blood_pressure/test_set_bp/"
+        BP_val_path = "/edrive2/zechenzh/V4V/Phase2_data/blood_pressure/val_set_bp/"
+        BP_test_path = "/edrive2/zechenzh/V4V/Phase2_data/blood_pressure/test_set_bp/"
 
     video_folder_path = ""
     BP_folder_path = ""
