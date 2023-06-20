@@ -45,10 +45,11 @@ def data_processing_1(data_type, device_type):
     for path in sorted(os.listdir(video_folder_path)):
         if os.path.isfile(os.path.join(video_folder_path, path)):
             video_file_path.append(path)
+    video_file_path =video_file_path[0:2]
     num_video = len(video_file_path)
     print(num_video)
 
-    videos = [Parallel(n_jobs=48)(
+    videos = [Parallel(n_jobs=24*4)(
         delayed(preprocess_raw_video)(video_folder_path + video) for video in video_file_path)]
     videos = videos[0]
 
@@ -238,8 +239,6 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
         path = 'C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/'
     else:
         path = '/edrive2/zechenzh/preprocessed_v4v/'
-    # frames = np.load(path + data_type + '_frames_' + str(task_num) + '.npy')
-    # BP_lf = np.load(path + data_type + '_BP_'+ str(task_num) + '.npy')
     valid_frames = np.load(path + "valid_frames.npy")
     valid_BP = np.load(path + "valid_BP_batch.npy")
     valid_data = ((valid_frames[:, :, :, :3], valid_frames[:, :, :, -3:]), valid_BP)
@@ -269,11 +268,8 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
         model.load_weights(path + 'mtts_poisson.hdf5')
         model.evaluate(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=nb_batch)
     else:
-        # if 'my_mtts_v3.hdf5' in os.listdir(path):
-        #     print("************Continue training************")
-        #     model.load_weights(path + 'my_mtts_v3.hdf5')
-        save_best_callback = ModelCheckpoint(filepath=path + 'mtts_poisson.hdf5', save_best_only=True, verbose=1)
-        # early_stop = tf.keras.callbacks.EarlyStopping(monitor=losses, patience=10)
+        save_best_callback = ModelCheckpoint(filepath=path + 'mtts_poisson.hdf5',
+                                             save_best_only=True, verbose=1)
         history = model.fit(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=nb_batch,
                             epochs=nb_epoch, callbacks=[save_best_callback],
                             verbose=1, shuffle=False, validation_data=valid_data,
@@ -289,12 +285,6 @@ if __name__ == "__main__":
                         help='data type')
     parser.add_argument('-device', '--device_type', type=str, default='local',
                         help='device type')
-    # parser.add_argument('-t', '--task', type=int, default=0,
-    #                     help='the order of exp')
-    # parser.add_argument('-i', '--data_dir', type=str,
-    #                     help='Location for the dataset')
-    # parser.add_argument('-o', '--save_dir', type=str, default='./rPPG-checkpoints',
-    #                     help='Location for parameter checkpoints and samples')
     parser.add_argument('-a', '--nb_filters1', type=int, default=32,
                         help='number of convolutional filters to use')
     parser.add_argument('-b', '--nb_filters2', type=int, default=64,
@@ -319,8 +309,9 @@ if __name__ == "__main__":
     if args.exp_type == "model":
         model_train(data_type=args.data_type, device_type=args.device_type,
                     task_num=0, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
-                    dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2, nb_dense=args.nb_dense,
-                    nb_batch=args.nb_batch, nb_epoch=args.nb_epoch, multiprocess=args.multiprocess)
+                    dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2,
+                    nb_dense=args.nb_dense, nb_batch=args.nb_batch,
+                    nb_epoch=args.nb_epoch, multiprocess=args.multiprocess)
     else:
         data_processing_1(data_type=args.data_type, device_type=args.device_type)
     # data_processing_3(data_type=args.data_type, device_type=args.device_type)
