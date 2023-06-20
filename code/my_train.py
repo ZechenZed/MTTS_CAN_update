@@ -54,7 +54,7 @@ def data_processing_1(data_type, device_type, dim=48):
     num_video = len(video_file_path)
     print(num_video)
 
-    videos = [Parallel(n_jobs=2)(
+    videos = [Parallel(n_jobs=24*4)(
         delayed(preprocess_raw_video)(video_folder_path + video) for video in video_file_path)]
     videos = videos[0]
 
@@ -84,11 +84,11 @@ def data_processing_1(data_type, device_type, dim=48):
 
     # Saving processed frames
     if device_type == "remote":
-        np.save('/edrive2/zechenzh/preprocessed_v4v/' + data_type + '_frames_test.npy', frames)
-        np.save('/edrive2/zechenzh/preprocessed_v4v/' + data_type + '_BP.npy', BP_lf)
+        np.save('/edrive2/zechenzh/preprocessed_v4v/' + data_type + '_frames_face.npy', frames)
+        np.save('/edrive2/zechenzh/preprocessed_v4v/' + data_type + '_BP_mean.npy', BP_lf)
     else:
         np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_frames_face.npy', frames)
-        np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_BP.npy', BP_lf)
+        np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_BP_mean.npy', BP_lf)
 
 
 # Video --> 1000Hz
