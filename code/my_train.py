@@ -2,29 +2,15 @@ import os
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "6,7"
 
-import cv2
-import glob
 import json
 import argparse
 import numpy as np
 from statistics import mean
 from joblib import Parallel, delayed
-import matplotlib
-import matplotlib.pyplot as plt
 from scipy.signal import medfilt
 
-# matplotlib.use('TkAgg', force=True)
 import tensorflow as tf
-from tensorflow import keras
-# from tensorflow.python.keras import optimizers
-from tensorflow.keras.optimizers import Adadelta
 from tensorflow.keras.callbacks import ModelCheckpoint
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.layers import Conv2D, Conv3D, Input, AveragePooling2D, \
-    multiply, Dense, Dropout, Flatten, AveragePooling3D
-from tensorflow.python.keras.models import Model
-
-from skimage.util import img_as_float
 
 from inference_preprocess import preprocess_raw_video
 from model import MTTS_CAN
@@ -92,10 +78,10 @@ def data_processing_1(data_type, device_type):
 
     # Saving processed frames
     if device_type == "remote":
-        np.save('../../../../edrive2/zechenzh/preprocessed_v4v/' + data_type + '_frames.npy', frames)
+        np.save('../../../../edrive2/zechenzh/preprocessed_v4v/' + data_type + '_frames_face.npy', frames)
         np.save('../../../../edrive2/zechenzh/preprocessed_v4v/' + data_type + '_BP.npy', BP_lf)
     else:
-        np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_frames.npy', frames)
+        np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_frames_face.npy', frames)
         np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_BP.npy', BP_lf)
 
 
@@ -255,24 +241,10 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
     # frames = np.load(path + data_type + '_frames_' + str(task_num) + '.npy')
     # BP_lf = np.load(path + data_type + '_BP_'+ str(task_num) + '.npy')
     valid_frames = np.load(path + "valid_frames.npy")
-    valid_BP = np.load(path + "valid_BP_v3.npy")
+    valid_BP = np.load(path + "valid_BP_batch.npy")
     valid_data = ((valid_frames[:, :, :, :3], valid_frames[:, :, :, -3:]), valid_BP)
     frames = np.load(path + data_type + '_frames.npy')
-    BP_lf = np.load(path + data_type + '_BP_v3.npy')
-
-    # Train 132505 * 6
-    # frames = frames[132505*5:132505*6]
-    # BP_lf = BP_lf[132505*5:132505*6]
-    # # Test 102090 * 4
-    # frames = frames[102090*3:102090*4]
-    # BP_lf = BP_lf[102090*3:102090*4]
-    # # BP_lf = BP_lf[0:1610]
-    # # plt.plot(BP_lf, label="BP downsampled into lower freq")
-    # # plt.legend()
-    # # plt.show()
-    # for i in range(6):
-    #     np.save('../../preprocessed_v4v/train_frames_' + str(i) + '.npy', frames[132505 * i:132505 * (i + 1)])
-    #     np.save('../../preprocessed_v4v/train_BP_' + str(i) + '.npy', BP_lf[132505 * i:132505 * (i + 1)])
+    BP_lf = np.load(path + data_type + '_BP_batch.npy')
 
     # Model setup
     img_rows = 36
