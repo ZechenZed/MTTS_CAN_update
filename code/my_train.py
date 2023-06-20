@@ -36,9 +36,12 @@ def data_processing_1(data_type, device_type, dim=48):
     if data_type == "train":
         video_folder_path = video_train_path
         BP_folder_path = BP_phase1_path
-    else:
+    elif data_type == "test":
         video_folder_path = video_test_path
         BP_folder_path = BP_test_path
+    else:
+        video_folder_path = video_valid_path
+        BP_folder_path = BP_phase1_path
 
     # Video path reading
     video_file_path = []
