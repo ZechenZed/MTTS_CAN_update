@@ -17,7 +17,7 @@ from model import MTTS_CAN
 
 
 # BP --> 25 Hz
-def data_processing_1(data_type, device_type):
+def data_processing_1(data_type, device_type, dim=48):
     if device_type == "local":
         video_train_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/"
         video_valid_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/valid/"
@@ -64,7 +64,7 @@ def data_processing_1(data_type, device_type):
             BP_file_path.append(path)
 
     # BP & Video frame processing
-    frames = np.zeros(shape=(tt_frame, 36, 36, 6))
+    frames = np.zeros(shape=(tt_frame, dim, dim, 6))
     BP_lf = np.zeros(shape=tt_frame)
     frame_ind = 0
     for j in range(num_video):
