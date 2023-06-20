@@ -84,8 +84,8 @@ def data_processing_1(data_type, device_type, dim=48):
 
     # Saving processed frames
     if device_type == "remote":
-        np.save('../../../../edrive2/zechenzh/preprocessed_v4v/' + data_type + '_frames_test.npy', frames)
-        np.save('../../../../edrive2/zechenzh/preprocessed_v4v/' + data_type + '_BP.npy', BP_lf)
+        np.save('/edrive2/zechenzh/preprocessed_v4v/' + data_type + '_frames_test.npy', frames)
+        np.save('/edrive2/zechenzh/preprocessed_v4v/' + data_type + '_BP.npy', BP_lf)
     else:
         np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_frames_face.npy', frames)
         np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_BP.npy', BP_lf)
