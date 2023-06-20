@@ -26,12 +26,12 @@ def data_processing_1(data_type, device_type, dim=48):
         BP_val_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/blood_pressure/val_set_bp/"
         BP_test_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/blood_pressure/test_set_bp/"
     else:
-        video_train_path = "../../../../edrive2/zechenzh/V4V/Phase1_data/Videos/train/"
-        video_valid_path = "../../../../edrive2/zechenzh/V4V/Phase1_data/Videos/valid/"
-        video_test_path = "../../../../edrive2/zechenzh/V4V/Phase2_data/Videos/test/"
-        BP_phase1_path = "../../../../edrive2/zechenzh/V4V/Phase1_data/Ground_truth/BP_raw_1KHz/"
-        BP_val_path = "../../../../edrive2/zechenzh/V4V/Phase2_data/blood_pressure/val_set_bp/"
-        BP_test_path = "../../../../edrive2/zechenzh/V4V/Phase2_data/blood_pressure/test_set_bp/"
+        video_train_path = "/edrive2/zechenzh/V4V/Phase1_data/Videos/train/"
+        video_valid_path = "/edrive2/zechenzh/V4V/Phase1_data/Videos/valid/"
+        video_test_path = "/edrive2/zechenzh/V4V/Phase2_data/Videos/test/"
+        BP_phase1_path = "/edrive2/zechenzh/V4V/Phase1_data/Ground_truth/BP_raw_1KHz/"
+        BP_val_path = "/edrive2/zechenzh/Phase2_data/blood_pressure/val_set_bp/"
+        BP_test_path = "/edrive2/zechenzh//Phase2_data/blood_pressure/test_set_bp/"
 
     video_folder_path = ""
     BP_folder_path = ""
@@ -54,7 +54,7 @@ def data_processing_1(data_type, device_type, dim=48):
     num_video = len(video_file_path)
     print(num_video)
 
-    videos = [Parallel(n_jobs=100)(
+    videos = [Parallel(n_jobs=2)(
         delayed(preprocess_raw_video)(video_folder_path + video) for video in video_file_path)]
     videos = videos[0]
 
