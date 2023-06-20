@@ -2,14 +2,8 @@ import random
 import numpy as np
 import cv2
 from skimage.util import img_as_float
-import tensorflow as tf
-import matplotlib.pyplot as plt
-import time
-import scipy.io
 from scipy.sparse import spdiags
-from timeit import default_timer as timer
-from joblib import Parallel, delayed
-# from numba.typed import List
+import matplotlib.pyplot as plt
 
 # def resize_image(img, h_new, w_old, h_old):
 #     "I believe reszing image before face detection will speed up"
@@ -28,7 +22,7 @@ from joblib import Parallel, delayed
 #     return patches
 
 
-def preprocess_raw_video(videoFilePath, dim=36):
+def preprocess_raw_video(videoFilePath, dim=48):
     # set up
     print("***********Processing "+videoFilePath[-12:]+"***********")
     t = []
@@ -38,13 +32,10 @@ def preprocess_raw_video(videoFilePath, dim=36):
     Xsub = np.zeros((totalFrames, dim, dim, 3), dtype=np.float32)
     success, img = vidObj.read()
     rows, cols, _ = img.shape
-    # face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    # if i == 0:
-    #     image_dtype = img.dtype
-    #     if image_dtype == 'uint8':
-    #         bit_depth = 8
-    #     elif image_dtype == 'uint16':
-    #         bit_depth = 16
+    height = rows
+    width = cols
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
     # Crop each frame size into dim x dim
     while success:
         t.append(vidObj.get(cv2.CAP_PROP_POS_MSEC))
@@ -56,33 +47,33 @@ def preprocess_raw_video(videoFilePath, dim=36):
         # # Experimental
         # vidLxL = cv2.resize(img_as_float(img[200:1240, :, :]), (dim, dim), interpolation=cv2.INTER_AREA)
 
-        # Without considering the ratio
-
-        vidLxL = cv2.resize(img_as_float(img[:, :, :]), (dim, dim), interpolation=cv2.INTER_AREA)
-
-        # # Face cropping
-        # # Add black edge around each frame of picture
-        # width_edge = 300
-        # height_edge = height * (width_edge / width)
-        # original_cf = np.float32([[0, 0], [width - 1, 0], [(width - 1) / 2, height - 1]])
-        # transed_cf = np.float32([[width_edge - 1, height_edge - 1], [width - width_edge - 1, height_edge - 1],
-        #                          [(width - 1) / 2, height - height_edge - 1]])
-        # matrix = cv2.getAffineTransform(original_cf, transed_cf)
-        # img = cv2.warpAffine(img, matrix, (cols, rows))
-        # #
-        # # Face detection in gray scale image
-        # # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        # faces = face_cascade.detectMultiScale(img, 1.3, 5)
+        # # Without considering the ratio
         #
-        # # Cropping out ROI from the original image based on the "1:1:1"ish face ratio
-        # roi = 0
-        # for (x, y, w, h) in faces:
-        #     roi = img_as_float(img[int(y - 0.25 * h):int(y + 1.05 * h), int(x - 0.15 * w):int(x + 1.15 * w), :])
-        #
-        # # Original resizing from MTTS_CAN
-        # vidLxL = cv2.resize(roi, (dim, dim), interpolation=cv2.INTER_AREA)
+        # vidLxL = cv2.resize(img_as_float(img[:, :, :]), (dim, dim), interpolation=cv2.INTER_AREA)
 
-        vidLxL = cv2.rotate(vidLxL, cv2.ROTATE_90_CLOCKWISE)
+        # Face cropping
+        # Add black edge around each frame of picture
+        width_edge = 300
+        height_edge = height * (width_edge / width)
+        original_cf = np.float32([[0, 0], [width - 1, 0], [(width - 1) / 2, height - 1]])
+        transed_cf = np.float32([[width_edge - 1, height_edge - 1], [width - width_edge - 1, height_edge - 1],
+                                 [(width - 1) / 2, height - height_edge - 1]])
+        matrix = cv2.getAffineTransform(original_cf, transed_cf)
+        img = cv2.warpAffine(img, matrix, (cols, rows))
+
+        # Face detection in gray scale image
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+
+        # Cropping out ROI from the original image based on the "1:1:1"ish face ratio
+        roi = 0
+        for (x, y, w, h) in faces:
+            roi = img_as_float(img[int(y - 0.25 * h):int(y + 1.05 * h), int(x - 0.15 * w):int(x + 1.15 * w), :])
+
+        # Original resizing from MTTS_CAN
+        vidLxL = cv2.resize(roi, (dim, dim), interpolation=cv2.INTER_AREA)
+
+        # vidLxL = cv2.rotate(vidLxL, cv2.ROTATE_90_CLOCKWISE)
         vidLxL = cv2.cvtColor(vidLxL.astype('float32'), cv2.COLOR_BGR2RGB)
         vidLxL[vidLxL > 1] = 1
         vidLxL[vidLxL < (1 / 255)] = 1 / 255
@@ -90,7 +81,9 @@ def preprocess_raw_video(videoFilePath, dim=36):
 
         success, img = vidObj.read()
         i = i + 1
-
+    plt.imshow(Xsub[random.randint(0,i)])
+    plt.title('Sample Preprocessed Frame')
+    plt.show()
     # Normalized Frames in the motion branch
     normalized_len = len(t) - 1
     dXsub = np.zeros((normalized_len, dim, dim, 3), dtype=np.float32)

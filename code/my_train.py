@@ -344,38 +344,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print('input args:\n', json.dumps(vars(args), indent=4, separators=(',', ':')))  # pretty print args
 
-    # # Check GPU
-    # physical_devices = tf.config.list_physical_devices('GPU')
-    # tf.config.experimental.set_memory_growth(physical_devices[0], enable=True)
-    # tf.keras.backend.clear_session()
-    # strategy = tf.distribute.MirroredStrategy()
-    # print('Number of devices: {}'.format(strategy.num_replicas_in_sync)
-
-    # test_frames = np.load('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/train_frames.npy')
-    # test_BP = np.load('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/train_BP.npy')
-    # for i in range(4):
-    #     np.save('C:/Users/Zed/Desktop\Project-BMFG/preprocessed_v4v/train_frames_' + str(i) + '.npy', test_frames[132505 * i:132505 * (i + 1)])
-    #     np.save('C:/Users/Zed/Desktop\Project-BMFG/preprocessed_v4v/train_BP_' + str(i) + '.npy', test_BP[132505 * i:132505 * (i + 1)])
-
-    # path = '../../edrive2/zechenzh/preprocessed_v4v/'
-    # frames = np.load(path + 'train_frames.npy')
-    # BP = np.load(path + 'train_BP.npy')
-    # for i in range(6):
-    #     np.save(path + 'train_frames_' + str(i) + '.npy', frames[132505 * i:132505 * (i + 1)])
-    #     np.save(path + 'train_BP_' + str(i) + '.npy', BP[132505 * i:132505 * (i + 1)])
-
-    # path = 'C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/'
-    # # path = '../../edrive2/zechenzh/preprocessed_v4v/'
-    # BP = np.load(path + 'train_BP.npy')
-    # frames = np.load(path + "train_frames.npy")
-    # print("BP:", BP.shape[0], " Frames:", frames.shape[0])
-    # tt_frame = int(BP.shape[0] / 40)
-    # BP_batch = np.zeros((tt_frame, 40))
-    # for i in range(tt_frame):
-    #     BP_batch[i, :] = BP[40 * i:40 * (i + 1)]
-    # print(BP_batch.shape)
-    # np.save(path+'train_BP_v2.npy',BP_batch)
-
     if args.exp_type == "model":
         model_train(data_type=args.data_type, device_type=args.device_type,
                     task_num=0, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
