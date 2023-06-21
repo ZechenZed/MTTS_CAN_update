@@ -202,7 +202,7 @@ def data_processing_3(data_type, device_type, dim=48):
     for path in sorted(os.listdir(video_folder_path)):
         if os.path.isfile(os.path.join(video_folder_path, path)):
             video_file_path.append(path)
-    video_file_path = video_file_path[0:2]
+    # video_file_path = video_file_path[0:2]
     num_video = len(video_file_path)
     print(num_video)
 
