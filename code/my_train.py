@@ -177,11 +177,11 @@ def data_processing_3(data_type, device_type):
         BP_phase1_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Ground_truth/BP_raw_1KHz/"
         BP_test_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/blood_pressure/test_set_bp/"
     else:
-        video_train_path = "../../../../edrive2/zechenzh/V4V/Phase1_data/Videos/train/"
-        video_valid_path = "../../../../edrive2/zechenzh/V4V/Phase1_data/Videos/valid/"
-        video_test_path = "../../../../edrive2/zechenzh/V4V/Phase2_data/Videos/test/"
-        BP_phase1_path = "../../../../edrive2/zechenzh/V4V/Phase1_data/Ground_truth/BP_raw_1KHz/"
-        BP_test_path = "../../../../edrive2/zechenzh/V4V/Phase2_data/blood_pressure/test_set_bp/"
+        video_train_path = "/edrive2/zechenzh/V4V/Phase1_data/Videos/train/"
+        video_valid_path = "/edrive2/zechenzh/V4V/Phase1_data/Videos/valid/"
+        video_test_path = "/edrive2/zechenzh/V4V/Phase2_data/Videos/test/"
+        BP_phase1_path = "/edrive2/zechenzh/V4V/Phase1_data/Ground_truth/BP_raw_1KHz/"
+        BP_test_path = "/edrive2/zechenzh/V4V/Phase2_data/blood_pressure/test_set_bp/"
 
     video_folder_path = ""
     BP_folder_path = ""
@@ -231,9 +231,9 @@ def data_processing_3(data_type, device_type):
 
     # Saving processed frames
     if device_type == "remote":
-        np.save('/../../edrive2/zechenzh/preprocessed_v4v/' + data_type + '_BP_v3.npy', BP_v3)
+        np.save('/edrive2/zechenzh/preprocessed_v4v/' + data_type + '_BP_batch.npy', BP_v3)
     else:
-        np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_BP_v3.npy', BP_v3)
+        np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_BP_batch.npy', BP_v3)
 
 
 def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
@@ -310,12 +310,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print('input args:\n', json.dumps(vars(args), indent=4, separators=(',', ':')))  # pretty print args
 
-    if args.exp_type == "model":
-        model_train(data_type=args.data_type, device_type=args.device_type,
-                    task_num=0, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
-                    dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2,
-                    nb_dense=args.nb_dense, nb_batch=args.nb_batch,
-                    nb_epoch=args.nb_epoch, multiprocess=args.multiprocess)
-    else:
-        data_processing_1(data_type=args.data_type, device_type=args.device_type)
-    # data_processing_3(data_type=args.data_type, device_type=args.device_type)
+    # if args.exp_type == "model":
+    #     model_train(data_type=args.data_type, device_type=args.device_type,
+    #                 task_num=0, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
+    #                 dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2,
+    #                 nb_dense=args.nb_dense, nb_batch=args.nb_batch,
+    #                 nb_epoch=args.nb_epoch, multiprocess=args.multiprocess)
+    # else:
+    #     data_processing_1(data_type=args.data_type, device_type=args.device_type)
+    data_processing_3(data_type=args.data_type, device_type=args.device_type)
