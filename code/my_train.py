@@ -247,10 +247,10 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
     else:
         path = '/edrive2/zechenzh/preprocessed_v4v/'
     valid_frames = np.load(path + "valid_frames_face.npy")
-    valid_BP = np.load(path + "valid_BP_mean.npy")
+    valid_BP = np.load(path + "valid_BP_batch.npy")
     valid_data = ((valid_frames[:, :, :, :3], valid_frames[:, :, :, -3:]), valid_BP)
     frames = np.load(path + data_type + '_frames_face.npy')
-    BP_lf = np.load(path + data_type + '_BP_mean.npy')
+    BP_lf = np.load(path + data_type + '_BP_batch.npy')
 
     # Model setup
     img_rows = 48
@@ -272,10 +272,10 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
     else:
         path = "checkpoints/"
     if data_type == "test":
-        model.load_weights(path + 'mtts_face.hdf5')
+        model.load_weights(path + 'mtts_face_batch.hdf5')
         model.evaluate(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=nb_batch)
     else:
-        save_best_callback = ModelCheckpoint(filepath=path + 'mtts_face.hdf5',
+        save_best_callback = ModelCheckpoint(filepath=path + 'mtts_face_batch.hdf5',
                                              save_best_only=True, verbose=1)
         history = model.fit(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=nb_batch,
                             epochs=nb_epoch, callbacks=[save_best_callback],
@@ -313,12 +313,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print('input args:\n', json.dumps(vars(args), indent=4, separators=(',', ':')))  # pretty print args
 
-    # if args.exp_type == "model":
-    #     model_train(data_type=args.data_type, device_type=args.device_type,
-    #                 task_num=0, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
-    #                 dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2,
-    #                 nb_dense=args.nb_dense, nb_batch=args.nb_batch,
-    #                 nb_epoch=args.nb_epoch, multiprocess=args.multiprocess)
-    # else:
-    #     data_processing_1(data_type=args.data_type, device_type=args.device_type)
-    data_processing_3(data_type=args.data_type, device_type=args.device_type)
+    if args.exp_type == "model":
+        model_train(data_type=args.data_type, device_type=args.device_type,
+                    task_num=0, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
+                    dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2,
+                    nb_dense=args.nb_dense, nb_batch=args.nb_batch,
+                    nb_epoch=args.nb_epoch, multiprocess=args.multiprocess)
+    else:
+        data_processing_1(data_type=args.data_type, device_type=args.device_type)
+    # data_processing_3(data_type=args.data_type, device_type=args.device_type)
