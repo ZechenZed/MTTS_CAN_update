@@ -12,7 +12,7 @@ from scipy.signal import medfilt
 import tensorflow as tf
 from tensorflow.keras.callbacks import ModelCheckpoint
 
-from inference_preprocess import preprocess_raw_video
+from inference_preprocess import preprocess_raw_video, count_frames
 from model import MTTS_CAN
 
 
@@ -202,17 +202,17 @@ def data_processing_3(data_type, device_type, dim=48):
     for path in sorted(os.listdir(video_folder_path)):
         if os.path.isfile(os.path.join(video_folder_path, path)):
             video_file_path.append(path)
-    # video_file_path = video_file_path[0:2]
+    video_file_path = video_file_path[0:2]
     num_video = len(video_file_path)
     print(num_video)
 
-    videos = [Parallel(n_jobs=-1)(
-        delayed(preprocess_raw_video)(video_folder_path + video) for video in video_file_path)]
+    videos = [Parallel(n_jobs=10)(
+        delayed(count_frames)(video_folder_path + video) for video in video_file_path)]
     videos = videos[0]
 
     tt_frame = 0
     for i in range(num_video):
-        tt_frame += videos[i].shape[0] // 10 * 10
+        tt_frame += videos[i] // 10 * 10
 
     # BP path reading
     BP_file_path = []
@@ -221,14 +221,12 @@ def data_processing_3(data_type, device_type, dim=48):
             BP_file_path.append(path)
 
     # BP & Video frame processing
-    frames = np.zeros(shape=(tt_frame, dim, dim, 6))
     BP_v3 = np.zeros(shape=(tt_frame, 40))
     frame_ind = 0
     for j in range(num_video):
         temp = np.loadtxt(BP_folder_path + BP_file_path[j])
-        cur_frames = videos[j].shape[0] // 10 * 10
+        cur_frames = videos[j] // 10 * 10
         temp_BP = np.zeros(shape=(cur_frames, 40))
-        frames[frame_ind:frame_ind + cur_frames, :, :, :] = videos[j][0:cur_frames, :, :, :]
         for i in range(0, cur_frames):
             temp_BP[i, :] = temp[40 * i:40 * (i + 1)]
         BP_v3[frame_ind:frame_ind + cur_frames, :] = temp_BP
@@ -315,12 +313,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print('input args:\n', json.dumps(vars(args), indent=4, separators=(',', ':')))  # pretty print args
 
-    if args.exp_type == "model":
-        model_train(data_type=args.data_type, device_type=args.device_type,
-                    task_num=0, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
-                    dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2,
-                    nb_dense=args.nb_dense, nb_batch=args.nb_batch,
-                    nb_epoch=args.nb_epoch, multiprocess=args.multiprocess)
-    else:
-        data_processing_1(data_type=args.data_type, device_type=args.device_type)
-    # data_processing_3(data_type=args.data_type, device_type=args.device_type)
+    # if args.exp_type == "model":
+    #     model_train(data_type=args.data_type, device_type=args.device_type,
+    #                 task_num=0, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
+    #                 dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2,
+    #                 nb_dense=args.nb_dense, nb_batch=args.nb_batch,
+    #                 nb_epoch=args.nb_epoch, multiprocess=args.multiprocess)
+    # else:
+    #     data_processing_1(data_type=args.data_type, device_type=args.device_type)
+    data_processing_3(data_type=args.data_type, device_type=args.device_type)

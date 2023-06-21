@@ -99,7 +99,9 @@ def preprocess_raw_video(videoFilePath, dim=48):
     return dXsub
 
 
-
+def count_frames(videoFilePath):
+    vidObj = cv2.VideoCapture(videoFilePath)
+    return int(vidObj.get(cv2.CAP_PROP_FRAME_COUNT))
 
 def detrend(signal, Lambda):
     """detrend(signal, Lambda) -> filtered_signal
