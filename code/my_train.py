@@ -169,18 +169,20 @@ def data_processing_2(data_type, device_type, task_num):
     print("###########Preprocess finished###########")
 
 
-def data_processing_3(data_type, device_type):
+def data_processing_3(data_type, device_type, dim=48):
     if device_type == "local":
         video_train_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/"
         video_valid_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/valid/"
         video_test_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/Videos/test/"
         BP_phase1_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Ground_truth/BP_raw_1KHz/"
+        BP_val_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/blood_pressure/val_set_bp/"
         BP_test_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/blood_pressure/test_set_bp/"
     else:
         video_train_path = "/edrive2/zechenzh/V4V/Phase1_data/Videos/train/"
         video_valid_path = "/edrive2/zechenzh/V4V/Phase1_data/Videos/valid/"
         video_test_path = "/edrive2/zechenzh/V4V/Phase2_data/Videos/test/"
         BP_phase1_path = "/edrive2/zechenzh/V4V/Phase1_data/Ground_truth/BP_raw_1KHz/"
+        BP_val_path = "/edrive2/zechenzh/V4V/Phase2_data/blood_pressure/val_set_bp/"
         BP_test_path = "/edrive2/zechenzh/V4V/Phase2_data/blood_pressure/test_set_bp/"
 
     video_folder_path = ""
@@ -188,9 +190,12 @@ def data_processing_3(data_type, device_type):
     if data_type == "train":
         video_folder_path = video_train_path
         BP_folder_path = BP_phase1_path
-    else:
+    elif data_type == "test":
         video_folder_path = video_test_path
         BP_folder_path = BP_test_path
+    else:
+        video_folder_path = video_valid_path
+        BP_folder_path = BP_val_path
 
     # Video path reading
     video_file_path = []
@@ -216,7 +221,7 @@ def data_processing_3(data_type, device_type):
             BP_file_path.append(path)
 
     # BP & Video frame processing
-    frames = np.zeros(shape=(tt_frame, 36, 36, 6))
+    frames = np.zeros(shape=(tt_frame, dim, dim, 6))
     BP_v3 = np.zeros(shape=(tt_frame, 40))
     frame_ind = 0
     for j in range(num_video):
@@ -244,10 +249,10 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
     else:
         path = '/edrive2/zechenzh/preprocessed_v4v/'
     valid_frames = np.load(path + "valid_frames_face.npy")
-    valid_BP = np.load(path + "valid_BP_batch.npy")
+    valid_BP = np.load(path + "valid_BP_mean.npy")
     valid_data = ((valid_frames[:, :, :, :3], valid_frames[:, :, :, -3:]), valid_BP)
     frames = np.load(path + data_type + '_frames_face.npy')
-    BP_lf = np.load(path + data_type + '_BP_batch.npy')
+    BP_lf = np.load(path + data_type + '_BP_mean.npy')
 
     # Model setup
     img_rows = 36
@@ -310,12 +315,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print('input args:\n', json.dumps(vars(args), indent=4, separators=(',', ':')))  # pretty print args
 
-    # if args.exp_type == "model":
-    #     model_train(data_type=args.data_type, device_type=args.device_type,
-    #                 task_num=0, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
-    #                 dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2,
-    #                 nb_dense=args.nb_dense, nb_batch=args.nb_batch,
-    #                 nb_epoch=args.nb_epoch, multiprocess=args.multiprocess)
-    # else:
-    #     data_processing_1(data_type=args.data_type, device_type=args.device_type)
-    data_processing_3(data_type=args.data_type, device_type=args.device_type)
+    if args.exp_type == "model":
+        model_train(data_type=args.data_type, device_type=args.device_type,
+                    task_num=0, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
+                    dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2,
+                    nb_dense=args.nb_dense, nb_batch=args.nb_batch,
+                    nb_epoch=args.nb_epoch, multiprocess=args.multiprocess)
+    else:
+        data_processing_1(data_type=args.data_type, device_type=args.device_type)
+    # data_processing_3(data_type=args.data_type, device_type=args.device_type)
