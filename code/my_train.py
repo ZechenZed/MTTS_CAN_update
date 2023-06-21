@@ -255,8 +255,8 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
     BP_lf = np.load(path + data_type + '_BP_mean.npy')
 
     # Model setup
-    img_rows = 36
-    img_cols = 36
+    img_rows = 48
+    img_cols = 48
     frame_depth = 1
     input_shape = (img_rows, img_cols, 3)
     print('Using MTTS_CAN!')
