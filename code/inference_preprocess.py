@@ -100,8 +100,18 @@ def preprocess_raw_video(videoFilePath, dim=48):
 
 
 def count_frames(videoFilePath):
+    print("***********Processing " + videoFilePath[-12:] + "***********")
+    t = []
+    i = 0
     vidObj = cv2.VideoCapture(videoFilePath)
-    return int(vidObj.get(cv2.CAP_PROP_FRAME_COUNT))
+    success, img = vidObj.read()
+    rows, cols, _ = img.shape
+    while success:
+        t.append(vidObj.get(cv2.CAP_PROP_POS_MSEC))
+        success, img = vidObj.read()
+        i = i + 1
+    normalized_len = len(t) - 1
+    return normalized_len
 
 def detrend(signal, Lambda):
     """detrend(signal, Lambda) -> filtered_signal
