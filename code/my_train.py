@@ -265,7 +265,7 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
                      nb_dense=nb_dense)
     losses = tf.keras.losses.MeanAbsolutePercentageError()
     loss_weights = {"output_1": 1.0}
-    opt = "adadelta"
+    opt = "Adam"
     model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
     if device_type == "local":
         path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
