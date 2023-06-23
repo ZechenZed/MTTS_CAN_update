@@ -53,7 +53,7 @@ def data_processing_1(data_type, device_type, dim=48):
     num_video = len(video_file_path)
     print(num_video)
 
-    videos = [Parallel(n_jobs=24*4)(
+    videos = [Parallel(n_jobs=12)(
         delayed(preprocess_raw_video)(video_folder_path + video) for video in video_file_path)]
     videos = videos[0]
 
