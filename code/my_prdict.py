@@ -18,22 +18,22 @@ def my_predict(data_type):
     img_rows = 48
     img_cols = 48
     frame_depth = 1
-    model_checkpoint = 'C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/mtts_face_batch.hdf5'
+    model_checkpoint = 'C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/mtts_face_Adam.hdf5'
     batch_size = 32
 
     dXsub = np.load('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_frames_face.npy')
-    BP_gt = np.load('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_BP_batch.npy')
+    # BP_gt = np.load('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_BP_mean.npy')
     print(dXsub.shape)
-    print(BP_gt.shape)
-    dXsub = dXsub[0:100*25]
-    BP_gt = BP_gt[0:100*25]
+    # print(BP_gt.shape)
+    # dXsub = dXsub[100*500:100*900]
+    # BP_gt = BP_gt[100*500:100*900]
 
     model = MTTS_CAN(frame_depth, 32, 64, (img_rows, img_cols, 3))
     model.load_weights(model_checkpoint)
     BP_pred = model.predict((dXsub[:, :, :, :3], dXsub[:, :, :, -3:]), batch_size=batch_size, verbose=1)
 
     plt.plot(BP_pred, label='prediction')
-    plt.plot(BP_gt, label='ground truth')
+    # plt.plot(BP_gt, label='ground truth')
     plt.legend()
     plt.show()
 
