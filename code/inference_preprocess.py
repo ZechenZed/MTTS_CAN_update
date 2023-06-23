@@ -67,8 +67,11 @@ def preprocess_raw_video(videoFilePath, dim=48):
 
         # Cropping out ROI from the original image based on the "1:1:1"ish face ratio
         roi = 0
+        # for (x, y, w, h) in faces:
+        #     roi = img_as_float(img[int(y - 0.25 * h):int(y + 1.05 * h), int(x - 0.15 * w):int(x + 1.15 * w), :])
+
         for (x, y, w, h) in faces:
-            roi = img_as_float(img[int(y - 0.25 * h):int(y + 1.05 * h), int(x - 0.15 * w):int(x + 1.15 * w), :])
+            roi = img_as_float(img[int(y):int(y + h), int(x):int(x + w), :])
 
         # Original resizing from MTTS_CAN
         vidLxL = cv2.resize(roi, (dim, dim), interpolation=cv2.INTER_AREA)

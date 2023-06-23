@@ -18,14 +18,14 @@ def my_predict(data_type):
     img_rows = 48
     img_cols = 48
     frame_depth = 1
-    model_checkpoint = 'C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/mtts_face_Adam.hdf5'
+    model_checkpoint = 'C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/mtts_v1_face_Adam.hdf5'
     batch_size = 32
 
     dXsub = np.load('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_frames_face.npy')
     # BP_gt = np.load('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_BP_mean.npy')
     print(dXsub.shape)
     # print(BP_gt.shape)
-    # dXsub = dXsub[100*500:100*900]
+    dXsub = dXsub[100*500:100*900]
     # BP_gt = BP_gt[100*500:100*900]
 
     model = MTTS_CAN(frame_depth, 32, 64, (img_rows, img_cols, 3))

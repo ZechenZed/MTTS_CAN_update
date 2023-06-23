@@ -1,6 +1,6 @@
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "6,7"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "6,7"
 
 import json
 import argparse
@@ -263,7 +263,7 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
     model = MTTS_CAN(frame_depth, nb_filters1, nb_filters2, input_shape,
                      dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
                      nb_dense=nb_dense)
-    losses = tf.keras.losses.MeanAbsolutePercentageError()
+    losses = tf.keras.losses.MeanAbsoluteError()
     loss_weights = {"output_1": 1.0}
     opt = "Adam"
     model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
