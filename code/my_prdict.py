@@ -22,18 +22,18 @@ def my_predict(data_type):
     batch_size = 32
 
     dXsub = np.load('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_frames_face.npy')
-    # BP_gt = np.load('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_BP_mean.npy')
+    BP_gt = np.load('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_BP_mean.npy')
     print(dXsub.shape)
     # print(BP_gt.shape)
-    dXsub = dXsub[100*500:100*900]
-    # BP_gt = BP_gt[100*500:100*900]
+    dXsub = dXsub[108360:108360+25*30]
+    BP_gt = BP_gt[108360:108360+25*30]
 
     model = MTTS_CAN(frame_depth, 32, 64, (img_rows, img_cols, 3))
     model.load_weights(model_checkpoint)
     BP_pred = model.predict((dXsub[:, :, :, :3], dXsub[:, :, :, -3:]), batch_size=batch_size, verbose=1)
 
     plt.plot(BP_pred, label='prediction')
-    # plt.plot(BP_gt, label='ground truth')
+    plt.plot(BP_gt, label='ground truth')
     plt.legend()
     plt.show()
 
