@@ -25,8 +25,8 @@ def my_predict(data_type):
     BP_gt = np.load('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_BP_mean.npy')
     print(dXsub.shape)
     # print(BP_gt.shape)
-    dXsub = dXsub[108360:108360+25*30]
-    BP_gt = BP_gt[108360:108360+25*30]
+    # dXsub = dXsub[194690:194690+25*300]
+    # BP_gt = BP_gt[194690:194690+25*300]
 
     model = MTTS_CAN(frame_depth, 32, 64, (img_rows, img_cols, 3))
     model.load_weights(model_checkpoint)
