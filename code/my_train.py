@@ -272,15 +272,15 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
     else:
         path = "checkpoints/"
     if data_type == "test":
-        model.load_weights(path + 'mtts_v1_face_Adam.hdf5')
+        model.load_weights(path + 'mtts_kernal_face_Adam.hdf5')
         model.evaluate(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=nb_batch)
     else:
-        save_best_callback = ModelCheckpoint(filepath=path + 'mtts_v1_face_Adam.hdf5',
+        save_best_callback = ModelCheckpoint(filepath=path + 'mtts_kernal_face_Adam.hdf5',
                                              save_best_only=True, verbose=1)
-        history = model.fit(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=nb_batch,
-                            epochs=nb_epoch, callbacks=[save_best_callback],
-                            verbose=1, shuffle=False, validation_data=valid_data,
-                            use_multiprocessing=multiprocess)
+        model.fit(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=nb_batch,
+                  epochs=nb_epoch, callbacks=[save_best_callback],
+                  verbose=1, shuffle=False, validation_data=valid_data,
+                  use_multiprocessing=multiprocess)
 
 
 if __name__ == "__main__":
