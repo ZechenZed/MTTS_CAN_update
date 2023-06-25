@@ -39,9 +39,9 @@ def my_predict(data_type):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-data', '--data_type', type=str, default='test',
-                        help='data type')
-    args = parser.parse_args()
-    my_predict(args.data_type)
-    # preprocess_raw_video('C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/F001_T1.mkv')
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument('-data', '--data_type', type=str, default='test',
+    #                     help='data type')
+    # args = parser.parse_args()
+    # my_predict(args.data_type)
+    preprocess_raw_video('C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/F001_T1.mkv')
