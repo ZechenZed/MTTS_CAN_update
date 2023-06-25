@@ -298,8 +298,8 @@ if __name__ == "__main__":
                         help='number of convolutional filters to use')
     parser.add_argument('-c', '--dropout_rate1', type=float, default=0.1,
                         help='dropout rates')
-    # parser.add_argument('-d', '--dropout_rate2', type=float, default=0.5,
-    #                     help='dropout rates')
+    parser.add_argument('-d', '--dropout_rate2', type=float, default=0.5,
+                        help='dropout rates')
     parser.add_argument('-l', '--lr', type=float, default=1.0,
                         help='learning rate')
     parser.add_argument('-e', '--nb_dense', type=int, default=128,
