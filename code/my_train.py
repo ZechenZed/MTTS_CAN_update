@@ -278,7 +278,7 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
         save_best_callback = ModelCheckpoint(filepath=path + 'mtts_kernal66_face_large_drop2.hdf5',
                                              save_best_only=True, verbose=1)
         model.fit(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=nb_batch,
-                  epochs=6, callbacks=[save_best_callback],
+                  epochs=nb_epoch, callbacks=[save_best_callback],
                   verbose=1, shuffle=False, validation_data=valid_data,
                   use_multiprocessing=multiprocess)
 
