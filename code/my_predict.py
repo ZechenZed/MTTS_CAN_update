@@ -23,7 +23,7 @@ def my_predict(data_type, dataset_type):
     model_checkpoint = path + '/BMFG/checkpoints/mtts_kernal66_' + dataset_type + '.hdf5'
     batch_size = 32
 
-    dXsub = np.load(path + '/preprocessed_v4v/' + data_type + '_frames_face_large.npy')
+    dXsub = np.load(path + '/preprocessed_v4v/' + data_type + '_frames_'+ dataset_type+'.npy')
     BP_gt = np.load(path + '/preprocessed_v4v/' + data_type + '_BP_mean.npy')
     size = dXsub.shape[0]
     print('*************', size, '*************')

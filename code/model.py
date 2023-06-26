@@ -202,8 +202,8 @@ def TS_CAN(n_frame, nb_filters1, nb_filters2, input_shape, kernel_size=(3, 3), d
 
 # %% MTTS-CAN
 
-def MTTS_CAN(n_frame, nb_filters1, nb_filters2, input_shape, kernel_size=(8, 6), dropout_rate1=0.1,
-             dropout_rate2=0.2, pool_size=(2, 2), nb_dense=128):
+def MTTS_CAN(n_frame, nb_filters1, nb_filters2, input_shape, kernel_size=(6, 6), dropout_rate1=0.1,
+             dropout_rate2=0.5, pool_size=(2, 2), nb_dense=128):
     diff_input = Input(shape=input_shape)
     rawf_input = Input(shape=input_shape)
 
