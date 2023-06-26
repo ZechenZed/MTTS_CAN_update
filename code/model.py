@@ -202,8 +202,8 @@ def TS_CAN(n_frame, nb_filters1, nb_filters2, input_shape, kernel_size=(3, 3), d
 
 # %% MTTS-CAN
 
-def MTTS_CAN(n_frame, nb_filters1, nb_filters2, input_shape, kernel_size=(6, 6), dropout_rate1=0.1,
-             dropout_rate2=0.5, pool_size=(2, 2), nb_dense=128):
+def MTTS_CAN(n_frame, nb_filters1, nb_filters2, input_shape, kernel_size=(8, 6), dropout_rate1=0.1,
+             dropout_rate2=0.2, pool_size=(2, 2), nb_dense=128):
     diff_input = Input(shape=input_shape)
     rawf_input = Input(shape=input_shape)
 
@@ -234,13 +234,13 @@ def MTTS_CAN(n_frame, nb_filters1, nb_filters2, input_shape, kernel_size=(6, 6),
     gated2 = multiply([d6, g2])
 
     d7 = AveragePooling2D(pool_size)(gated2)
-    # d8 = Dropout(dropout_rate1)(d7)
+    d8 = Dropout(dropout_rate1)(d7)
 
-    d9 = Flatten()(d7)
+    d9 = Flatten()(d8)
 
     d10_y = Dense(nb_dense, activation='tanh')(d9)
-    # d11_y = Dropout(dropout_rate2)(d10_y)
-    out_y = Dense(1, name='output_1')(d10_y)
+    d11_y = Dropout(dropout_rate2)(d10_y)
+    out_y = Dense(1, name='output_1')(d11_y)
 
     # d10_r = Dense(nb_dense, activation='tanh')(d9)
     # d11_r = Dropout(dropout_rate2)(d10_r)
