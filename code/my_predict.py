@@ -20,10 +20,10 @@ def my_predict(data_type, dataset_type):
     img_cols = 48
     frame_depth = 1
     path = 'C:/Users/Zed/Desktop/Project-BMFG'
-    model_checkpoint = path + '/BMFG/checkpoints/mtts_kernal66_' + dataset_type + '_drop2.hdf5'
+    model_checkpoint = path + '/BMFG/checkpoints/mtts_kernal66_' + dataset_type + '.hdf5'
     batch_size = 32
 
-    dXsub = np.load(path + '/preprocessed_v4v/' + data_type + '_frames_'+ dataset_type+'.npy')
+    dXsub = np.load(path + '/preprocessed_v4v/' + data_type + '_frames_' + dataset_type + '.npy')
     BP_gt = np.load(path + '/preprocessed_v4v/' + data_type + '_BP_mean.npy')
     size = dXsub.shape[0]
     print('*************', size, '*************')
