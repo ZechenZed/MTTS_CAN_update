@@ -36,7 +36,7 @@ def my_predict(data_type, dataset_type):
     model.load_weights(model_checkpoint)
     BP_pred = model.predict((dXsub[:, :, :, :3], dXsub[:, :, :, -3:]), batch_size=batch_size, verbose=1)
 
-    plt.plot(BP_pred, label='prediction')
+    # plt.plot(BP_pred, label='prediction')
     plt.plot(BP_gt, label='ground truth')
     plt.legend()
     plt.show()
