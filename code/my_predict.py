@@ -78,7 +78,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-data', '--data_type', type=str, default='test',
                         help='data type')
-    parser.add_argument('-dataset', '--dataset_type', type=str, default='ratio',
+    parser.add_argument('-dataset', '--dataset_type', type=str, default='face_large',
                         help='dataset type')
     args = parser.parse_args()
     my_predict(args.data_type, args.dataset_type)
