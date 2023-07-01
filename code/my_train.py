@@ -1,4 +1,5 @@
 import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "4,5"
 import json
 import argparse
 import numpy as np
@@ -14,7 +15,6 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from inference_preprocess import preprocess_raw_video, count_frames
 from model import MTTS_CAN
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "4,5"
 
 
 # BP --> 25 Hz
@@ -278,10 +278,10 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
         path = 'C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/'
     else:
         path = '/edrive2/zechenzh/preprocessed_v4v/'
-    valid_frames = np.load(path + "valid_frames_face_large.npy")
+    valid_frames = np.load(path + "valid_frames_face.npy")
     valid_BP = np.load(path + "valid_BP_mean_systolic.npy")
     valid_data = ((valid_frames[:, :, :, :3], valid_frames[:, :, :, -3:]), valid_BP)
-    frames = np.load(path + data_type + '_frames_face_large.npy')
+    frames = np.load(path + data_type + '_frames_face.npy')
     BP_lf = np.load(path + data_type + '_BP_mean_systolic.npy')
 
     # Model setup
@@ -304,11 +304,11 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
     else:
         path = "/home/zechenzh/checkpoints/"
     if data_type == "test":
-        model.load_weights(path + 'mtts_sys_kernal66_face_large_drop2.hdf5')
+        model.load_weights(path + 'mtts_sys_kernal66_face_drop2.hdf5')
         model.evaluate(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=nb_batch)
     else:
         early_stop = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=5)
-        save_best_callback = ModelCheckpoint(filepath=path + 'mtts_sys_kernal66_face_large_drop2.hdf5',
+        save_best_callback = ModelCheckpoint(filepath=path + 'mtts_sys_kernal66_face_drop2.hdf5',
                                              save_best_only=True, verbose=1)
         model.fit(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=nb_batch,
                   epochs=nb_epoch, callbacks=[save_best_callback, early_stop],
