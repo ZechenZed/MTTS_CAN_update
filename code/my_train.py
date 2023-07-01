@@ -1,19 +1,20 @@
 import os
-
-os.environ["CUDA_VISIBLE_DEVICES"] = "6,7"
-
 import json
 import argparse
 import numpy as np
 from statistics import mean
+import matplotlib.pyplot as plt
+from scipy.signal import find_peaks
 from joblib import Parallel, delayed
-from scipy.signal import medfilt
+from scipy.interpolate import interp1d
 
 import tensorflow as tf
 from tensorflow.keras.callbacks import ModelCheckpoint
 
 from inference_preprocess import preprocess_raw_video, count_frames
 from model import MTTS_CAN
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "4,5"
 
 
 # BP --> 25 Hz
@@ -90,7 +91,7 @@ def data_processing_1(data_type, device_type, dim=48):
         np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_BP_mean.npy', BP_lf)
 
 
-# Video --> 1000Hz
+# Video --> 1000Hz(Not recommended)
 def data_processing_2(data_type, device_type, task_num):
     if device_type == "local":
         video_train_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/"
@@ -239,6 +240,37 @@ def data_processing_3(data_type, device_type, dim=48):
         np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_BP_batch.npy', BP_v3)
 
 
+def BP_systolic(data_type, device_type):
+    if device_type == "local":
+        BP_folder_path = "C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/"
+    else:
+        BP_folder_path = "/edrive2/zechenzh/preprocessed_v4v/"
+
+    BP = np.load(BP_folder_path + data_type + '_BP_mean.npy')
+    size = BP.shape[0]
+    BP_systolic, _ = find_peaks(BP, distance=10)
+    BP_inter = np.zeros(BP.shape[0])
+    prev_index = 0
+    for index in BP_systolic:
+        y_interp = interp1d([prev_index, index], [BP[prev_index], BP[index]])
+        for i in range(prev_index, index + 1):
+            BP_inter[i] = y_interp(i)
+        prev_index = index
+    y_interp = interp1d([prev_index, size-1], [BP[prev_index], BP[size-1]])
+    for i in range(prev_index, size):
+        BP_inter[i] = y_interp(i)
+
+    # plt.plot(BP, label='Original')
+    # plt.plot(BP_inter, label='peaks')
+    # plt.show()
+
+    # Saving processed frames
+    if device_type == "remote":
+        np.save('/edrive2/zechenzh/preprocessed_v4v/' + data_type + '_BP_mean_systolic.npy', BP_inter)
+    else:
+        np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_BP_mean_systolic.npy', BP_inter)
+
+
 def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
                 dropout_rate1, dropout_rate2, nb_dense, nb_batch, nb_epoch, multiprocess):
     path = ""
@@ -247,10 +279,10 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
     else:
         path = '/edrive2/zechenzh/preprocessed_v4v/'
     valid_frames = np.load(path + "valid_frames_ratio.npy")
-    valid_BP = np.load(path + "valid_BP_mean.npy")
+    valid_BP = np.load(path + "valid_BP_mean_systolic.npy")
     valid_data = ((valid_frames[:, :, :, :3], valid_frames[:, :, :, -3:]), valid_BP)
     frames = np.load(path + data_type + '_frames_ratio.npy')
-    BP_lf = np.load(path + data_type + '_BP_mean.npy')
+    BP_lf = np.load(path + data_type + '_BP_mean_systolic.npy')
 
     # Model setup
     img_rows = 48
@@ -272,11 +304,11 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
     else:
         path = "/home/zechenzh/MTTS_CAN_update/checkpoints/"
     if data_type == "test":
-        model.load_weights(path + 'mtts_kernal1212_ratio.hdf5')
+        model.load_weights(path + 'mtts_sys_kernal66_ratio.hdf5')
         model.evaluate(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=nb_batch)
     else:
         early_stop = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=5)
-        save_best_callback = ModelCheckpoint(filepath=path + 'mtts_kernal1212_ratio.hdf5',
+        save_best_callback = ModelCheckpoint(filepath=path + 'mtts_sys_kernal66_ratio.hdf5',
                                              save_best_only=True, verbose=1)
         model.fit(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=nb_batch,
                   epochs=nb_epoch, callbacks=[save_best_callback, early_stop],
@@ -323,3 +355,5 @@ if __name__ == "__main__":
     else:
         data_processing_1(data_type=args.data_type, device_type=args.device_type)
     # data_processing_3(data_type=args.data_type, device_type=args.device_type)
+    # BP_systolic(data_type='valid', device_type='local')
+

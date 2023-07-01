@@ -1,9 +1,12 @@
+import random
 import argparse
+import numpy as np
 from math import log
 from model import MTTS_CAN
+from statistics import mean
 import matplotlib.pyplot as plt
-import numpy as np
-import random
+from scipy.signal import find_peaks, medfilt
+from scipy.interpolate import interp1d
 from inference_preprocess import preprocess_raw_video
 
 
@@ -13,6 +16,35 @@ def filter_fxn(pre_HR, cur_HR, cap):
         return cur_HR
     else:
         return pre_HR - np.sign(gap) * cap * log(abs(gap) + 1)
+
+
+def peaks():
+    BP_test = np.loadtxt('C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Ground_truth/BP_raw_1KHz/F001-T7-BP.txt')
+    size = int(BP_test.shape[0] // 40 * 40 / 40)
+    print(size)
+    BP_mean = np.zeros(size)
+    for i in range(0, size):
+        BP_mean[i] = mean(BP_test[i*40:(i +1)* 40])
+    maxBP = max(BP_mean)
+    minBP = min(BP_mean)
+    threshold = 0.5 * (maxBP - minBP)
+    print('max BP is', maxBP, 'min BP is', minBP)
+    print('---> threshold/horizontal distance =', threshold)
+    BP_systolic, _ = find_peaks(BP_mean, distance=10)
+    BP_inter = np.zeros(BP_mean.shape[0])
+    prev_index = 0
+    for index in BP_systolic:
+        y_interp = interp1d([prev_index,index],[BP_mean[prev_index], BP_mean[index]])
+        for i in range(prev_index,index+1):
+            BP_inter[i] = y_interp(i)
+        prev_index = index
+
+    plt.plot(BP_inter, label='interp')
+    # plt.plot(BP_systolic, BP_mean[BP_systolic], label='Systolic Pressure Peaks')
+    plt.plot(BP_mean, label='Mean')
+    # plt.plot(BP_test, label='Original BP wave')
+    plt.legend()
+    plt.show()
 
 
 def my_predict(data_type, dataset_type):
@@ -49,5 +81,6 @@ if __name__ == '__main__':
     parser.add_argument('-dataset', '--dataset_type', type=str, default='ratio',
                         help='dataset type')
     args = parser.parse_args()
-    my_predict(args.data_type, args.dataset_type)
+    # my_predict(args.data_type, args.dataset_type)
     # preprocess_raw_video('C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/F001_T1.mkv')
+    peaks()
