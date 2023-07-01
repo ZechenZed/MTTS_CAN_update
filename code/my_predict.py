@@ -52,11 +52,11 @@ def my_predict(data_type, dataset_type):
     img_cols = 48
     frame_depth = 1
     path = 'C:/Users/Zed/Desktop/Project-BMFG'
-    model_checkpoint = path + '/checkpoints/mtts_kernal1212_' + dataset_type + '.hdf5'
+    model_checkpoint = path + '/checkpoints/mtts_sys_kernal66_' + dataset_type + '.hdf5'
     batch_size = 32
 
     dXsub = np.load(path + '/preprocessed_v4v/' + data_type + '_frames_' + dataset_type + '.npy')
-    BP_gt = np.load(path + '/preprocessed_v4v/' + data_type + '_BP_mean.npy')
+    BP_gt = np.load(path + '/preprocessed_v4v/' + data_type + '_BP_mean_systolic.npy')
     size = dXsub.shape[0]
     print('*************', size, '*************')
     # print(BP_gt.shape)
@@ -81,6 +81,6 @@ if __name__ == '__main__':
     parser.add_argument('-dataset', '--dataset_type', type=str, default='ratio',
                         help='dataset type')
     args = parser.parse_args()
-    # my_predict(args.data_type, args.dataset_type)
+    my_predict(args.data_type, args.dataset_type)
     # preprocess_raw_video('C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/F001_T1.mkv')
-    peaks()
+    # peaks()
