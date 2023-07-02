@@ -307,11 +307,11 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
         model.load_weights(path + 'mtts_sys_kernal99_face_drop2.hdf5')
         model.evaluate(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=nb_batch)
     else:
-        early_stop = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=5)
+        # early_stop = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=5)
         save_best_callback = ModelCheckpoint(filepath=path + 'mtts_sys_kernal99_face_drop2.hdf5',
                                              save_best_only=True, verbose=1)
         model.fit(x=(frames[:, :, :, :3], frames[:, :, :, -3:]), y=BP_lf, batch_size=nb_batch,
-                  epochs=nb_epoch, callbacks=[save_best_callback, early_stop],
+                  epochs=nb_epoch, callbacks=[save_best_callback],
                   verbose=1, shuffle=False, validation_data=valid_data,
                   use_multiprocessing=multiprocess)
 
