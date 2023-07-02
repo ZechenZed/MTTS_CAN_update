@@ -78,7 +78,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-data', '--data_type', type=str, default='test',
                         help='data type')
-    parser.add_argument('-dataset', '--dataset_type', type=str, default='ratio',
+    parser.add_argument('-dataset', '--dataset_type', type=str, default='face_large',
                         help='dataset type')
     parser.add_argument('-kernal', '--kernal_size', type=str, default='99',
                         help='dataset type')
