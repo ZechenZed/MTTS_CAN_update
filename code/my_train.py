@@ -281,7 +281,7 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
     valid_frames = np.load(path + "valid_frames_ratio.npy")
     valid_BP = np.load(path + "valid_BP_mean_systolic.npy")
     valid_data = ((valid_frames[:, :, :, :3], valid_frames[:, :, :, -3:]), valid_BP)
-    frames = np.load(path + data_type + '_frames_fratio.npy')
+    frames = np.load(path + data_type + '_frames_ratio.npy')
     BP_lf = np.load(path + data_type + '_BP_mean_systolic.npy')
 
     # Model setup
