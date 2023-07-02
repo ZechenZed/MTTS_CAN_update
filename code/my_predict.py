@@ -76,11 +76,11 @@ def my_predict(data_type, dataset_type, kernal):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-data', '--data_type', type=str, default='test',
+    parser.add_argument('-data', '--data_type', type=str, default='valid',
                         help='data type')
-    parser.add_argument('-dataset', '--dataset_type', type=str, default='face',
+    parser.add_argument('-dataset', '--dataset_type', type=str, default='face_large',
                         help='dataset type')
-    parser.add_argument('-kernal', '--kernal_size', type=str, default='99',
+    parser.add_argument('-kernal', '--kernal_size', type=str, default='1212',
                         help='dataset type')
     args = parser.parse_args()
     my_predict(args.data_type, args.dataset_type, args.kernal_size)
