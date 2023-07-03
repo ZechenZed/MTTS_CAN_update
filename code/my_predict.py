@@ -6,7 +6,7 @@ from math import log
 from model import MTTS_CAN
 from statistics import mean
 import matplotlib.pyplot as plt
-from scipy.signal import find_peaks, medfilt
+from scipy.signal import find_peaks
 from scipy.interpolate import interp1d
 from inference_preprocess import preprocess_raw_video
 
@@ -53,7 +53,7 @@ def my_predict(data_type, dataset_type, kernal):
     img_cols = 48
     frame_depth = 1
     glob_path = 'C:/Users/Zed/Desktop/Project-BMFG'
-    model_checkpoint = glob_path + '/checkpoints/mtts_sys_kernal' + kernal + '_' + dataset_type + '_drop2.hdf5'
+    model_checkpoint = glob_path + '/checkpoints/mtts_sys_kernal' + kernal + '_' + dataset_type + '_drop2_nb256.hdf5'
     batch_size = 32
 
     video_folder_path = str()

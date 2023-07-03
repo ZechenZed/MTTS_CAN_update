@@ -1,10 +1,8 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "1,2"
 import json
 import argparse
 import numpy as np
 from statistics import mean
-import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 from joblib import Parallel, delayed
 from scipy.interpolate import interp1d
@@ -15,7 +13,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from inference_preprocess import preprocess_raw_video, count_frames
 from model import MTTS_CAN
 
-
+os.environ["CUDA_VISIBLE_DEVICES"] = "1,2"
 
 # BP --> 25 Hz
 def data_processing_1(data_type, device_type, dim=48):
@@ -256,7 +254,7 @@ def BP_systolic(data_type, device_type):
         for i in range(prev_index, index + 1):
             BP_inter[i] = y_interp(i)
         prev_index = index
-    y_interp = interp1d([prev_index, size-1], [BP[prev_index], BP[size-1]])
+    y_interp = interp1d([prev_index, size - 1], [BP[prev_index], BP[size - 1]])
     for i in range(prev_index, size):
         BP_inter[i] = y_interp(i)
 
@@ -356,4 +354,3 @@ if __name__ == "__main__":
         data_processing_1(data_type=args.data_type, device_type=args.device_type)
     # data_processing_3(data_type=args.data_type, device_type=args.device_type)
     # BP_systolic(data_type='valid', device_type='local')
-
