@@ -333,7 +333,7 @@ if __name__ == "__main__":
                         help='dropout rates')
     parser.add_argument('-l', '--lr', type=float, default=1.0,
                         help='learning rate')
-    parser.add_argument('-e', '--nb_dense', type=int, default=128,
+    parser.add_argument('-e', '--nb_dense', type=int, default=256,
                         help='number of dense units')
     parser.add_argument('-g', '--nb_epoch', type=int, default=12,
                         help='nb_epoch')
