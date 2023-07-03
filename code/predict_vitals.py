@@ -20,7 +20,6 @@ import h5py
 import matplotlib.pyplot as plt
 from scipy.signal import butter, filtfilt
 from inference_preprocess import preprocess_raw_video, detrend
-from numba import jit, cuda
 
 import numpy as np
 from scipy.signal import periodogram
