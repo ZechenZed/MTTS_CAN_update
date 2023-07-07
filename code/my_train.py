@@ -4,7 +4,7 @@ import argparse
 import numpy as np
 from statistics import mean
 import matplotlib.pyplot as plt
-from scipy.signal import find_peaks
+from scipy.signal import find_peaks, medfilt
 from joblib import Parallel, delayed
 from scipy.interpolate import interp1d
 
@@ -93,7 +93,7 @@ def data_processing_1(data_type, device_type, dim=48):
 
 
 # Video --> 1000Hz(Not recommended)
-def data_processing_2(data_type, device_type, task_num):
+def data_processing_2(data_type, device_type):
     if device_type == "local":
         video_train_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/"
         video_valid_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/valid/"
@@ -317,6 +317,7 @@ def model_train(data_type, device_type, nb_filters1, nb_filters2,
                   use_multiprocessing=multiprocess)
 
 
+#########################################################################################
 def new_data_process(data_type, device_type, image=str()):
     if device_type == "local":
         video_train_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/"
@@ -414,7 +415,7 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     else:
         path = '/edrive2/zechenzh/preprocessed_v4v_3d/'
 
-    valid_frames = np.load(path + 'valid_frames_3D_' + image_type + '.npy')
+    valid_frames = np.load(path + 'valid_frames_3d_' + image_type + '.npy')
     valid_BP = np.load(path + 'valid_BP_mean_systolic.npy')
     valid_data = ((valid_frames[:, :, :, :, :3], valid_frames[:, :, :, :, -3:]), valid_BP)
 
