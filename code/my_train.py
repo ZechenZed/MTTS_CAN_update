@@ -503,7 +503,7 @@ if __name__ == "__main__":
                         help='number of dense units')
     parser.add_argument('-g', '--nb_epoch', type=int, default=12,
                         help='nb_epoch')
-    parser.add_argument('--nb_batch', type=int, default=32,
+    parser.add_argument('--nb_batch', type=int, default=8,
                         help='nb_batch')
     parser.add_argument('--multiprocess', type=bool, default=False,
                         help='Use multiprocess or not')
