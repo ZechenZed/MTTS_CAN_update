@@ -416,7 +416,7 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
         path = '/edrive2/zechenzh/preprocessed_v4v_3d/'
 
     valid_frames = np.load(path + 'valid_frames_3d_' + image_type + '.npy')
-    valid_BP = np.load(path + 'valid_BP_mean_systolic.npy')
+    valid_BP = np.load(path + 'valid_BP_3d_systolic.npy')
     valid_data = ((valid_frames[:, :, :, :, :3], valid_frames[:, :, :, :, -3:]), valid_BP)
 
     frames = np.load(path + 'train_frames_3d_' + image_type + '.npy')
