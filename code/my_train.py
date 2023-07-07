@@ -417,7 +417,7 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
 
     valid_frames = np.load(path + 'valid_frames_3d_' + image_type + '.npy')
     valid_BP = np.load(path + 'valid_BP_3d_systolic.npy')
-    valid_data = ((valid_frames[:, :, :, :, :3], valid_frames[:, :, :, :, -3:]), valid_BP)
+    # valid_data = ((valid_frames[:, :, :, :, :3], valid_frames[:, :, :, :, -3:]), valid_BP)
 
     frames = np.load(path + 'train_frames_3d_' + image_type + '.npy')
     BP_lf = np.load(path + 'train_BP_3d_systolic.npy')
@@ -441,20 +441,46 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
         opt = "Adam"
         model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
 
-        if device_type == "local":
-            path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
-        else:
-            path = "/home/zechenzh/checkpoints/"
-        if data_type == "test":
-            model.load_weights(path + 'mt3d_sys_face_large.hdf5')
-            model.evaluate(x=(frames[:, :, :, :, :3], frames[:, :, :, :, -3:]), y=BP_lf, batch_size=nb_batch)
-        else:
-            # early_stop = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=5)
-            save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
-                                                 save_best_only=True, verbose=1)
-            model.fit(x=(frames[:, :, :, :, :3], frames[:, :, :, :, -3:]), y=BP_lf, batch_size=nb_batch,
-                      epochs=nb_epoch, callbacks=[save_best_callback], validation_data=valid_data,
-                      verbose=1, shuffle=False, use_multiprocessing=multiprocess)
+    train_data = tf.data.Dataset.from_tensor_slices(((frames[:, :, :, :, :3], frames[:, :, :, :, -3:]), BP_lf))
+    val_data = tf.data.Dataset.from_tensor_slices((valid_frames, valid_BP))
+
+    batch_size = nb_batch
+    train_data = train_data.batch(batch_size)
+    val_data = val_data.batch(batch_size)
+
+    options = tf.data.Options()
+    options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.OFF
+    train_data = train_data.with_options(options)
+    val_data = val_data.with_options(options)
+    if device_type == "local":
+        path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
+    else:
+        path = "/home/zechenzh/checkpoints/"
+    if data_type == "test":
+        model.load_weights(path + 'mt3d_sys_face_large.hdf5')
+        model.evaluate(x=(frames[:, :, :, :, :3], frames[:, :, :, :, -3:]), y=BP_lf, batch_size=nb_batch)
+    else:
+        # early_stop = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=5)
+        save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
+                                             save_best_only=True, verbose=1)
+        model.fit(train_data, batch_size=nb_batch,
+                  epochs=nb_epoch, callbacks=[save_best_callback], validation_data=val_data,
+                  verbose=1, shuffle=False, use_multiprocessing=multiprocess)
+
+    # if device_type == "local":
+    #     path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
+    # else:
+    #     path = "/home/zechenzh/checkpoints/"
+    # if data_type == "test":
+    #     model.load_weights(path + 'mt3d_sys_face_large.hdf5')
+    #     model.evaluate(x=(frames[:, :, :, :, :3], frames[:, :, :, :, -3:]), y=BP_lf, batch_size=nb_batch)
+    # else:
+    #     # early_stop = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=5)
+    #     save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
+    #                                          save_best_only=True, verbose=1)
+    #     model.fit(x=(frames[:, :, :, :, :3], frames[:, :, :, :, -3:]), y=BP_lf, batch_size=nb_batch,
+    #               epochs=nb_epoch, callbacks=[save_best_callback], validation_data=valid_data,
+    #               verbose=1, shuffle=False, use_multiprocessing=multiprocess)
 
 
 if __name__ == "__main__":
