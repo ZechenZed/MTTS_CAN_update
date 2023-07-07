@@ -326,11 +326,12 @@ def MT_CAN_3D(n_frame, nb_filters1, nb_filters2, input_shape, kernel_size=(3, 3,
     d11_y = Dropout(dropout_rate2)(d10_y)
     out_y = Dense(n_frame, name='output_1')(d11_y)
 
-    d10_r = Dense(nb_dense, activation='tanh')(d9)
-    d11_r = Dropout(dropout_rate2)(d10_r)
-    out_r = Dense(n_frame, name='output_2')(d11_r)
+    # d10_r = Dense(nb_dense, activation='tanh')(d9)
+    # d11_r = Dropout(dropout_rate2)(d10_r)
+    # out_r = Dense(n_frame, name='output_2')(d11_r)
 
-    model = Model(inputs=[diff_input, rawf_input], outputs=[out_y, out_r])
+    # model = Model(inputs=[diff_input, rawf_input], outputs=[out_y, out_r])
+    model = Model(inputs=[diff_input, rawf_input], outputs=out_y)
 
     return model
 
