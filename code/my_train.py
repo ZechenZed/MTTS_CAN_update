@@ -11,9 +11,10 @@ import tensorflow as tf
 from tensorflow.keras.callbacks import ModelCheckpoint
 
 from inference_preprocess import preprocess_raw_video, count_frames
-from model import MTTS_CAN
+from model import MTTS_CAN, MT_CAN_3D
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "1,2"
+
 
 # BP --> 25 Hz
 def data_processing_1(data_type, device_type, dim=48):
@@ -49,6 +50,7 @@ def data_processing_1(data_type, device_type, dim=48):
     for path in sorted(os.listdir(video_folder_path)):
         if os.path.isfile(os.path.join(video_folder_path, path)):
             video_file_path.append(path)
+    video_file_path = video_file_path[0:10]
     num_video = len(video_file_path)
     print(num_video)
 
@@ -238,6 +240,78 @@ def data_processing_3(data_type, device_type, dim=48):
         np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_BP_batch.npy', BP_v3)
 
 
+def new_data_process(data_type, device_type, dim=48):
+    if device_type == "local":
+        video_train_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/"
+        video_valid_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/valid/"
+        video_test_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/Videos/test/"
+        BP_phase1_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Ground_truth/BP_raw_1KHz/"
+        BP_val_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/blood_pressure/val_set_bp/"
+        BP_test_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/blood_pressure/test_set_bp/"
+    else:
+        video_train_path = "/edrive2/zechenzh/V4V/Phase1_data/Videos/train/"
+        video_valid_path = "/edrive2/zechenzh/V4V/Phase1_data/Videos/valid/"
+        video_test_path = "/edrive2/zechenzh/V4V/Phase2_data/Videos/test/"
+        BP_phase1_path = "/edrive2/zechenzh/V4V/Phase1_data/Ground_truth/BP_raw_1KHz/"
+        BP_val_path = "/edrive2/zechenzh/V4V/Phase2_data/blood_pressure/val_set_bp/"
+        BP_test_path = "/edrive2/zechenzh/V4V/Phase2_data/blood_pressure/test_set_bp/"
+
+    video_folder_path = ""
+    BP_folder_path = ""
+    if data_type == "train":
+        video_folder_path = video_train_path
+        BP_folder_path = BP_phase1_path
+    elif data_type == "test":
+        video_folder_path = video_test_path
+        BP_folder_path = BP_test_path
+    else:
+        video_folder_path = video_valid_path
+        BP_folder_path = BP_val_path
+
+    # Video path reading
+    video_file_path = []
+    for path in sorted(os.listdir(video_folder_path)):
+        if os.path.isfile(os.path.join(video_folder_path, path)):
+            video_file_path.append(path)
+    video_file_path = video_file_path[0:5]
+    num_video = len(video_file_path)
+    print('Processing ' + str(num_video) + ' Videos')
+
+    videos = [Parallel(n_jobs=12)(
+        delayed(preprocess_raw_video)(video_folder_path + video) for video in video_file_path)]
+    videos = videos[0]
+
+    # Max Frame finding
+    max_frame = 0
+    for i in range(num_video):
+        max_frame = max(max_frame, videos[i].shape[0] // 10 * 10)
+    videos_batch = np.zeros((num_video, max_frame, 48, 48, 6))
+
+    # BP file finding
+    BP_file_path = []
+    for path in sorted(os.listdir(BP_folder_path)):
+        if os.path.isfile(os.path.join(BP_folder_path, path)):
+            BP_file_path.append(path)
+
+    BP_lf = np.zeros((num_video, max_frame))
+
+    for i in range(num_video):
+        temp_BP = np.loadtxt(BP_folder_path + BP_file_path[i])
+        current_frames = videos[i].shape[0] // 10 * 10
+        temp_lf = np.zeros(current_frames)
+        for j in range(0, current_frames):
+            temp_lf[j] = mean(temp_BP[j * 40:(j + 1) * 40])
+        BP_lf[i][0:current_frames] = temp_lf[:]
+        videos_batch[i][0:current_frames, :, :, :] = videos[i][0:current_frames, :, :, :]
+
+    if device_type == "remote":
+        np.save('/edrive2/zechenzh/preprocessed_v4v/' + data_type + '_frames_test.npy', videos_batch)
+        np.save('/edrive2/zechenzh/preprocessed_v4v/' + data_type + '_BP_test.npy', BP_lf)
+    else:
+        np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_frames_test.npy', videos_batch)
+        np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_BP_test.npy', BP_lf)
+
+
 def BP_systolic(data_type, device_type):
     if device_type == "local":
         BP_folder_path = "C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/"
@@ -314,6 +388,53 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
                   use_multiprocessing=multiprocess)
 
 
+def new_model_train(data_type, device_type, nb_filters1, nb_filters2,
+                    dropout_rate1, dropout_rate2, nb_dense, nb_batch, nb_epoch, multiprocess):
+    path = ""
+    if device_type == "local":
+        path = 'C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/'
+    else:
+        path = '/edrive2/zechenzh/preprocessed_v4v/'
+
+    # frames = np.load('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/train_frames_previous.npy')
+    # BP_lf = np.load('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/train_BP_mean.npy')
+    # BP_lf = BP_lf[0:1000]
+
+    frames = np.load('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/train_frames_test.npy')
+    BP_lf = np.load('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/train_BP_test.npy')
+    print(frames.shape)
+
+    # Model setup
+    img_rows = 48
+    img_cols = 48
+    frame_depth = 1610
+    input_shape = (frame_depth,img_rows, img_cols, 3)
+    print('Using MTTS_CAN!')
+
+    # Create a callback that saves the model's weights
+    model = MT_CAN_3D(frame_depth, nb_filters1, nb_filters2, input_shape,
+                     dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
+                     nb_dense=nb_dense)
+    losses = tf.keras.losses.MeanAbsoluteError()
+    loss_weights = {"output_1": 1.0}
+    opt = "Adam"
+    model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
+    if device_type == "local":
+        path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
+    else:
+        path = "/home/zechenzh/checkpoints/"
+    if data_type == "test":
+        model.load_weights(path + 'mtts_sys_kernal99_face_drop2_nb256.hdf5')
+        model.evaluate(x=(frames[:, :, :, :, :3], frames[:, :, :, :, -3:]), y=BP_lf, batch_size=[nb_batch,5])
+    else:
+        # early_stop = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=5)
+        save_best_callback = ModelCheckpoint(filepath=path + 'mtts_sys_kernal99_face_drop2_nb256.hdf5',
+                                             save_best_only=True, verbose=1)
+        model.fit(x=(frames[:, :, :, :, :3], frames[:, :, :, :, -3:]), y=BP_lf, batch_size=nb_batch,
+                  epochs=nb_epoch, callbacks=[save_best_callback],
+                  verbose=1, shuffle=False, use_multiprocessing=multiprocess)
+
+
 if __name__ == "__main__":
     # args
     parser = argparse.ArgumentParser()
@@ -344,13 +465,19 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print('input args:\n', json.dumps(vars(args), indent=4, separators=(',', ':')))  # pretty print args
 
-    if args.exp_type == "model":
-        model_train(data_type=args.data_type, device_type=args.device_type,
-                    task_num=0, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
+    # if args.exp_type == "model":
+    #     model_train(data_type=args.data_type, device_type=args.device_type,
+    #                 task_num=0, nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
+    #                 dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2,
+    #                 nb_dense=args.nb_dense, nb_batch=args.nb_batch,
+    #                 nb_epoch=args.nb_epoch, multiprocess=args.multiprocess)
+    # else:
+    #     data_processing_1(data_type=args.data_type, device_type=args.device_type)
+    # data_processing_3(data_type=args.data_type, device_type=args.device_type)
+    # BP_systolic(data_type='valid', device_type='local')
+    # new_data_process(data_type=args.data_type, device_type=args.device_type)
+    new_model_train(data_type=args.data_type, device_type=args.device_type,
+                    nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
                     dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2,
                     nb_dense=args.nb_dense, nb_batch=args.nb_batch,
                     nb_epoch=args.nb_epoch, multiprocess=args.multiprocess)
-    else:
-        data_processing_1(data_type=args.data_type, device_type=args.device_type)
-    # data_processing_3(data_type=args.data_type, device_type=args.device_type)
-    # BP_systolic(data_type='valid', device_type='local')
