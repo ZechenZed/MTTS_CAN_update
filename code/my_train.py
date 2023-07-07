@@ -422,7 +422,7 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2,
     # BP_lf = np.load('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/train_BP_test.npy')
 
     frames = np.load('/edrive2/zechenzh/preprocessed_v4v_3d/train_frames_3d_face_large.npy')
-    BP_lf = np.load('/edrive2/zechenzh/preprocessed_v4v_3d/train_3d_systolic.npy')
+    BP_lf = np.load('/edrive2/zechenzh/preprocessed_v4v_3d/train_BP_3d_systolic.npy')
 
     # Model setup
     img_rows = 48
