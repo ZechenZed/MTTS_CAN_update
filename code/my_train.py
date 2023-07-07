@@ -436,7 +436,7 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
         model = MT_CAN_3D(frame_depth, nb_filters1, nb_filters2, input_shape,
                           dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
                           nb_dense=nb_dense)
-        losses = tf.keras.losses.MeanAbsoluteError()
+        losses = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
         loss_weights = {"output_1": 1.0}
         opt = "Adam"
         model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
@@ -456,16 +456,11 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
         path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
     else:
         path = "/home/zechenzh/checkpoints/"
-    if data_type == "test":
-        model.load_weights(path + 'mt3d_sys_face_large.hdf5')
-        model.evaluate(x=(frames[:, :, :, :, :3], frames[:, :, :, :, -3:]), y=BP_lf, batch_size=nb_batch)
-    else:
-        # early_stop = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=5)
-        save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
-                                             save_best_only=True, verbose=1)
-        model.fit(train_data, batch_size=nb_batch,
-                  epochs=nb_epoch, callbacks=[save_best_callback], validation_data=val_data,
-                  verbose=1, shuffle=False, use_multiprocessing=multiprocess)
+    save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
+                                         save_best_only=True, verbose=1)
+    model.fit(train_data, batch_size=nb_batch,
+              epochs=nb_epoch, callbacks=[save_best_callback], validation_data=val_data,
+              verbose=1, shuffle=False, use_multiprocessing=multiprocess)
 
     # if device_type == "local":
     #     path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
