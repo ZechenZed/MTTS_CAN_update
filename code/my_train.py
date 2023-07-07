@@ -448,7 +448,7 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     train_data = train_data.batch(batch_size)
     val_data = val_data.batch(batch_size)
 
-    options = tf.data.Options()
+    options = tf.data.Options(report_tensor_allocations_upon_oom = True)
     options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.OFF
     train_data = train_data.with_options(options)
     val_data = val_data.with_options(options)
