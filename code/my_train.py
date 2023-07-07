@@ -474,7 +474,7 @@ if __name__ == "__main__":
                         help='number of convolutional filters to use')
     parser.add_argument('-b', '--nb_filters2', type=int, default=64,
                         help='number of convolutional filters to use')
-    parser.add_argument('-c', '--dropout_rate1', type=float, default=0.125,
+    parser.add_argument('-c', '--dropout_rate1', type=float, default=0.25,
                         help='dropout rates')
     parser.add_argument('-d', '--dropout_rate2', type=float, default=0.5,
                         help='dropout rates')
@@ -501,10 +501,10 @@ if __name__ == "__main__":
     #     data_processing_1(data_type=args.data_type, device_type=args.device_type)
 
 
-    new_data_process(data_type=args.data_type, device_type=args.device_type, image=args.image_type)
+    # new_data_process(data_type=args.data_type, device_type=args.device_type, image=args.image_type)
 
-    # new_model_train(data_type=args.data_type, device_type=args.device_type,
-    #                 nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
-    #                 dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2,
-    #                 nb_dense=args.nb_dense, nb_batch=args.nb_batch,
-    #                 nb_epoch=args.nb_epoch, multiprocess=args.multiprocess)
+    new_model_train(data_type=args.data_type, device_type=args.device_type,
+                    nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
+                    dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2,
+                    nb_dense=args.nb_dense, nb_batch=args.nb_batch,
+                    nb_epoch=args.nb_epoch, multiprocess=args.multiprocess)
