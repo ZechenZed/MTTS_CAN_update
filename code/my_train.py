@@ -429,7 +429,8 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2,
     img_cols = 48
     frame_depth = 1610
     input_shape = (frame_depth,img_rows, img_cols, 3)
-    print('Using MTTS_CAN!')
+    print('Using MT_CAN_3D!')
+
     strategy = tf.distribute.MirroredStrategy()
     print("Number of devices: {}".format(strategy.num_replicas_in_sync))
     with strategy.scope():
