@@ -241,95 +241,6 @@ def data_processing_3(data_type, device_type, dim=48):
         np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_BP_batch.npy', BP_v3)
 
 
-def new_data_process(data_type, device_type, image=str()):
-    if device_type == "local":
-        video_train_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/"
-        video_valid_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/valid/"
-        video_test_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/Videos/test/"
-        BP_phase1_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Ground_truth/BP_raw_1KHz/"
-        BP_val_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/blood_pressure/val_set_bp/"
-        BP_test_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/blood_pressure/test_set_bp/"
-    else:
-        video_train_path = "/edrive2/zechenzh/V4V/Phase1_data/Videos/train/"
-        video_valid_path = "/edrive2/zechenzh/V4V/Phase1_data/Videos/valid/"
-        video_test_path = "/edrive2/zechenzh/V4V/Phase2_data/Videos/test/"
-        BP_phase1_path = "/edrive2/zechenzh/V4V/Phase1_data/Ground_truth/BP_raw_1KHz/"
-        BP_val_path = "/edrive2/zechenzh/V4V/Phase2_data/blood_pressure/val_set_bp/"
-        BP_test_path = "/edrive2/zechenzh/V4V/Phase2_data/blood_pressure/test_set_bp/"
-
-    video_folder_path = ""
-    BP_folder_path = ""
-    if data_type == "train":
-        video_folder_path = video_train_path
-        BP_folder_path = BP_phase1_path
-    elif data_type == "test":
-        video_folder_path = video_test_path
-        BP_folder_path = BP_test_path
-    else:
-        video_folder_path = video_valid_path
-        BP_folder_path = BP_val_path
-
-    # Video path reading
-    video_file_path = []
-    for path in sorted(os.listdir(video_folder_path)):
-        if os.path.isfile(os.path.join(video_folder_path, path)):
-            video_file_path.append(path)
-    video_file_path = video_file_path[0:5]
-    num_video = len(video_file_path)
-    print('Processing ' + str(num_video) + ' Videos')
-
-    # Face cropping in video
-    videos = [Parallel(n_jobs=12)(
-        delayed(preprocess_raw_video)(video_folder_path + video) for video in video_file_path)]
-    videos = videos[0]
-
-    # Max Frame finding
-    max_frame = 0
-    for i in range(num_video):
-        max_frame = max(max_frame, videos[i].shape[0] // 10 * 10)
-    videos_batch = np.zeros((num_video, max_frame, 48, 48, 6))
-
-    # BP file finding
-    BP_file_path = []
-    for path in sorted(os.listdir(BP_folder_path)):
-        if os.path.isfile(os.path.join(BP_folder_path, path)):
-            BP_file_path.append(path)
-
-    BP_lf = np.zeros((num_video, max_frame))
-    for i in range(num_video):
-        temp_BP = np.loadtxt(BP_folder_path + BP_file_path[i])
-        current_frames = videos[i].shape[0] // 10 * 10
-        temp_BP_lf = np.zeros(current_frames)
-        for j in range(0, current_frames):
-            temp_BP_lf[j] = mean(temp_BP[j * 40:(j + 1) * 40])
-
-        # Systolic BP finding and linear interp
-        temp_BP_lf_systolic, _ = find_peaks(temp_BP_lf, distance=10)
-        temp_BP_lf_systolic_inter = np.zeros(current_frames)
-        prev_index = 0
-        for index in temp_BP_lf_systolic:
-            y_interp = interp1d([prev_index, index], [temp_BP_lf[prev_index], temp_BP_lf[index]])
-            for k in range(prev_index, index + 1):
-                temp_BP_lf_systolic_inter[k] = y_interp(k)
-            prev_index = index
-        y_interp = interp1d([prev_index, current_frames - 1], [temp_BP_lf[prev_index], temp_BP_lf[current_frames - 1]])
-        for l in range(prev_index, current_frames):
-            temp_BP_lf_systolic_inter[l] = y_interp(l)
-
-        BP_lf[i][0:current_frames] = temp_BP_lf_systolic_inter[:]
-        plt.plot(temp_BP_lf_systolic_inter)
-        plt.show()
-        videos_batch[i][0:current_frames, :, :, :] = videos[i][0:current_frames, :, :, :]
-
-    saving_path = str()
-    if device_type == "remote":
-        saving_path = '/edrive2/zechenzh/preprocessed_v4v_3d/'
-    else:
-        saving_path = 'C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v_3d/'
-    np.save(saving_path + data_type + '_frames_3d_' + image + '.npy', videos_batch)
-    np.save(saving_path + data_type + '_BP_3d_systolic.npy', BP_lf)
-
-
 def BP_systolic(data_type, device_type):
     if device_type == "local":
         BP_folder_path = "C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/"
@@ -406,6 +317,95 @@ def model_train(data_type, device_type, nb_filters1, nb_filters2,
                   use_multiprocessing=multiprocess)
 
 
+def new_data_process(data_type, device_type, image=str()):
+    if device_type == "local":
+        video_train_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/"
+        video_valid_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/valid/"
+        video_test_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/Videos/test/"
+        BP_phase1_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Ground_truth/BP_raw_1KHz/"
+        BP_val_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/blood_pressure/val_set_bp/"
+        BP_test_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/blood_pressure/test_set_bp/"
+    else:
+        video_train_path = "/edrive2/zechenzh/V4V/Phase1_data/Videos/train/"
+        video_valid_path = "/edrive2/zechenzh/V4V/Phase1_data/Videos/valid/"
+        video_test_path = "/edrive2/zechenzh/V4V/Phase2_data/Videos/test/"
+        BP_phase1_path = "/edrive2/zechenzh/V4V/Phase1_data/Ground_truth/BP_raw_1KHz/"
+        BP_val_path = "/edrive2/zechenzh/V4V/Phase2_data/blood_pressure/val_set_bp/"
+        BP_test_path = "/edrive2/zechenzh/V4V/Phase2_data/blood_pressure/test_set_bp/"
+
+    video_folder_path = ""
+    BP_folder_path = ""
+    if data_type == "train":
+        video_folder_path = video_train_path
+        BP_folder_path = BP_phase1_path
+    elif data_type == "test":
+        video_folder_path = video_test_path
+        BP_folder_path = BP_test_path
+    else:
+        video_folder_path = video_valid_path
+        BP_folder_path = BP_val_path
+
+    # Video path reading
+    video_file_path = []
+    for path in sorted(os.listdir(video_folder_path)):
+        if os.path.isfile(os.path.join(video_folder_path, path)):
+            video_file_path.append(path)
+    video_file_path = video_file_path[0:50]
+    num_video = len(video_file_path)
+    print('Processing ' + str(num_video) + ' Videos')
+
+    # Face cropping in video
+    videos = [Parallel(n_jobs=12)(
+        delayed(preprocess_raw_video)(video_folder_path + video) for video in video_file_path)]
+    videos = videos[0]
+
+    # Max Frame finding
+    max_frame = 0
+    for i in range(num_video):
+        max_frame = max(max_frame, videos[i].shape[0] // 10 * 10)
+    videos_batch = np.zeros((num_video, max_frame, 48, 48, 6))
+
+    # BP file finding
+    BP_file_path = []
+    for path in sorted(os.listdir(BP_folder_path)):
+        if os.path.isfile(os.path.join(BP_folder_path, path)):
+            BP_file_path.append(path)
+
+    BP_lf = np.zeros((num_video, max_frame))
+    for i in range(num_video):
+        temp_BP = np.loadtxt(BP_folder_path + BP_file_path[i])
+        current_frames = videos[i].shape[0] // 10 * 10
+        temp_BP_lf = np.zeros(current_frames)
+        for j in range(0, current_frames):
+            temp_BP_lf[j] = mean(temp_BP[j * 40:(j + 1) * 40])
+
+        # Systolic BP finding and linear interp
+        temp_BP_lf_systolic, _ = find_peaks(temp_BP_lf, distance=10)
+        temp_BP_lf_systolic_inter = np.zeros(current_frames)
+        prev_index = 0
+        for index in temp_BP_lf_systolic:
+            y_interp = interp1d([prev_index, index], [temp_BP_lf[prev_index], temp_BP_lf[index]])
+            for k in range(prev_index, index + 1):
+                temp_BP_lf_systolic_inter[k] = y_interp(k)
+            prev_index = index
+        y_interp = interp1d([prev_index, current_frames - 1], [temp_BP_lf[prev_index], temp_BP_lf[current_frames - 1]])
+        for l in range(prev_index, current_frames):
+            temp_BP_lf_systolic_inter[l] = y_interp(l)
+
+        BP_lf[i][0:current_frames] = temp_BP_lf_systolic_inter[:]
+        plt.plot(temp_BP_lf_systolic_inter)
+        plt.show()
+        videos_batch[i][0:current_frames, :, :, :] = videos[i][0:current_frames, :, :, :]
+
+    saving_path = str()
+    if device_type == "remote":
+        saving_path = '/edrive2/zechenzh/preprocessed_v4v_3d/'
+    else:
+        saving_path = 'C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v_3d/'
+    np.save(saving_path + data_type + '_frames_3d_' + image + '.npy', videos_batch)
+    np.save(saving_path + data_type + '_BP_3d_systolic.npy', BP_lf)
+
+
 def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_rate1, dropout_rate2,
                     nb_dense, nb_batch, nb_epoch, multiprocess, image_type):
     path = str()
@@ -442,11 +442,11 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     else:
         path = "/home/zechenzh/checkpoints/"
     if data_type == "test":
-        model.load_weights(path + 'mt3d.hdf5')
-        model.evaluate(x=(frames[:, :, :, :, :3], frames[:, :, :, :, -3:]), y=BP_lf, batch_size=[nb_batch, 5])
+        model.load_weights(path + 'mt3d_sys_face_large.hdf5')
+        model.evaluate(x=(frames[:, :, :, :, :3], frames[:, :, :, :, -3:]), y=BP_lf, batch_size=nb_batch)
     else:
         # early_stop = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=5)
-        save_best_callback = ModelCheckpoint(filepath=path + 'mt3d.hdf5',
+        save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
                                              save_best_only=True, verbose=1)
         model.fit(x=(frames[:, :, :, :, :3], frames[:, :, :, :, -3:]), y=BP_lf, batch_size=nb_batch,
                   epochs=nb_epoch, callbacks=[save_best_callback], validation_data=valid_data,
