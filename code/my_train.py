@@ -325,8 +325,8 @@ def new_data_process(data_type, device_type, dim=48, image=str()):
         saving_path = '/edrive2/zechenzh/preprocessed_v4v/'
     else:
         saving_path = 'C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/'
-    np.save(saving_path + + data_type + '_frames_3d_'+image+'.npy', videos_batch)
-    np.save(saving_path + + data_type + '_BP_3d_systolic.npy', BP_lf)
+    np.save(saving_path + data_type + '_frames_3d_'+image+'.npy', videos_batch)
+    np.save(saving_path + data_type + '_BP_3d_systolic.npy', BP_lf)
 
 
 
