@@ -14,7 +14,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from inference_preprocess import preprocess_raw_video, count_frames
 from model import MTTS_CAN, MT_CAN_3D
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "6,7"
+os.environ["CUDA_VISIBLE_DEVICES"] = "5,6"
 
 
 # BP --> 25 Hz
@@ -430,15 +430,18 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2,
     frame_depth = 1610
     input_shape = (frame_depth,img_rows, img_cols, 3)
     print('Using MTTS_CAN!')
+    strategy = tf.distribute.MirroredStrategy()
+    print("Number of devices: {}".format(strategy.num_replicas_in_sync))
+    with strategy.scope():
+        # Create a callback that saves the model's weights
+        model = MT_CAN_3D(frame_depth, nb_filters1, nb_filters2, input_shape,
+                         dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
+                         nb_dense=nb_dense)
+        losses = tf.keras.losses.MeanAbsoluteError()
+        loss_weights = {"output_1": 1.0}
+        opt = "Adam"
+        model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
 
-    # Create a callback that saves the model's weights
-    model = MT_CAN_3D(frame_depth, nb_filters1, nb_filters2, input_shape,
-                     dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
-                     nb_dense=nb_dense)
-    losses = tf.keras.losses.MeanAbsoluteError()
-    loss_weights = {"output_1": 1.0}
-    opt = "Adam"
-    model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
     if device_type == "local":
         path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
     else:
