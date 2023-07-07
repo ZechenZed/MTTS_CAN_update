@@ -3,6 +3,7 @@ import json
 import argparse
 import numpy as np
 from statistics import mean
+import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 from joblib import Parallel, delayed
 from scipy.interpolate import interp1d
@@ -13,7 +14,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from inference_preprocess import preprocess_raw_video, count_frames
 from model import MTTS_CAN, MT_CAN_3D
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,5"
+os.environ["CUDA_VISIBLE_DEVICES"] = "6,7"
 
 
 # BP --> 25 Hz
@@ -240,7 +241,7 @@ def data_processing_3(data_type, device_type, dim=48):
         np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_BP_batch.npy', BP_v3)
 
 
-def new_data_process(data_type, device_type, dim=48):
+def new_data_process(data_type, device_type, dim=48, image=str()):
     if device_type == "local":
         video_train_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/"
         video_valid_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/valid/"
@@ -294,22 +295,39 @@ def new_data_process(data_type, device_type, dim=48):
             BP_file_path.append(path)
 
     BP_lf = np.zeros((num_video, max_frame))
-
     for i in range(num_video):
         temp_BP = np.loadtxt(BP_folder_path + BP_file_path[i])
         current_frames = videos[i].shape[0] // 10 * 10
-        temp_lf = np.zeros(current_frames)
+        temp_BP_lf = np.zeros(current_frames)
         for j in range(0, current_frames):
-            temp_lf[j] = mean(temp_BP[j * 40:(j + 1) * 40])
-        BP_lf[i][0:current_frames] = temp_lf[:]
+            temp_BP_lf[j] = mean(temp_BP[j * 40:(j + 1) * 40])
+
+        # Systolic BP finding and linear interp
+        temp_BP_lf_systolic, _ = find_peaks(temp_BP_lf, distance=10)
+        temp_BP_lf_systolic_inter = np.zeros(current_frames)
+        prev_index = 0
+        for index in temp_BP_lf_systolic:
+            y_interp = interp1d([prev_index, index], [temp_BP_lf[prev_index], temp_BP_lf[index]])
+            for k in range(prev_index, index + 1):
+                temp_BP_lf_systolic_inter[k] = y_interp(k)
+            prev_index = index
+        y_interp = interp1d([prev_index, current_frames - 1], [temp_BP_lf[prev_index], temp_BP_lf[current_frames - 1]])
+        for l in range(prev_index, current_frames):
+            temp_BP_lf_systolic_inter[l] = y_interp(l)
+
+        BP_lf[i][0:current_frames] = temp_BP_lf_systolic_inter[:]
+        plt.plot(temp_BP_lf_systolic_inter)
+        plt.show()
         videos_batch[i][0:current_frames, :, :, :] = videos[i][0:current_frames, :, :, :]
 
+    saving_path = str()
     if device_type == "remote":
-        np.save('/edrive2/zechenzh/preprocessed_v4v/' + data_type + '_frames_test.npy', videos_batch)
-        np.save('/edrive2/zechenzh/preprocessed_v4v/' + data_type + '_BP_test.npy', BP_lf)
+        saving_path = '/edrive2/zechenzh/preprocessed_v4v/'
     else:
-        np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_frames_test.npy', videos_batch)
-        np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_BP_test.npy', BP_lf)
+        saving_path = 'C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/'
+    np.save(saving_path+'/edrive2/zechenzh/preprocessed_v4v/' + data_type + '_frames_3d_'+image+'.npy', videos_batch)
+    np.save(saving_path+'/edrive2/zechenzh/preprocessed_v4v/' + data_type + '_BP_3d_systolic.npy', BP_lf)
+
 
 
 def BP_systolic(data_type, device_type):
@@ -321,7 +339,7 @@ def BP_systolic(data_type, device_type):
     BP = np.load(BP_folder_path + data_type + '_BP_mean.npy')
     size = BP.shape[0]
     BP_systolic, _ = find_peaks(BP, distance=10)
-    BP_inter = np.zeros(BP.shape[0])
+    BP_inter = np.zeros(size)
     prev_index = 0
     for index in BP_systolic:
         y_interp = interp1d([prev_index, index], [BP[prev_index], BP[index]])
@@ -444,6 +462,8 @@ if __name__ == "__main__":
                         help='experiment type: model or video')
     parser.add_argument('-data', '--data_type', type=str, default='train',
                         help='data type')
+    parser.add_argument('-image', '--image_type', type=str, default='face_large',
+                        help='input image area')
     parser.add_argument('-device', '--device_type', type=str, default='local',
                         help='device type')
     parser.add_argument('-a', '--nb_filters1', type=int, default=32,
@@ -477,9 +497,9 @@ if __name__ == "__main__":
     #     data_processing_1(data_type=args.data_type, device_type=args.device_type)
     # data_processing_3(data_type=args.data_type, device_type=args.device_type)
     # BP_systolic(data_type='valid', device_type='local')
-    # new_data_process(data_type=args.data_type, device_type=args.device_type)
-    new_model_train(data_type=args.data_type, device_type=args.device_type,
-                    nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
-                    dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2,
-                    nb_dense=args.nb_dense, nb_batch=args.nb_batch,
-                    nb_epoch=args.nb_epoch, multiprocess=args.multiprocess)
+    new_data_process(data_type=args.data_type, device_type=args.device_type, image=args.image_type)
+    # new_model_train(data_type=args.data_type, device_type=args.device_type,
+    #                 nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
+    #                 dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2,
+    #                 nb_dense=args.nb_dense, nb_batch=args.nb_batch,
+    #                 nb_epoch=args.nb_epoch, multiprocess=args.multiprocess)
