@@ -390,19 +390,21 @@ def model_train(data_type, device_type, task_num, nb_filters1, nb_filters2,
 
 def new_model_train(data_type, device_type, nb_filters1, nb_filters2,
                     dropout_rate1, dropout_rate2, nb_dense, nb_batch, nb_epoch, multiprocess):
-    path = ""
-    if device_type == "local":
-        path = 'C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/'
-    else:
-        path = '/edrive2/zechenzh/preprocessed_v4v/'
+    # path = ""
+    # if device_type == "local":
+    #     path = 'C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/'
+    # else:
+    #     path = '/edrive2/zechenzh/preprocessed_v4v_3d/'
 
     # frames = np.load('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/train_frames_previous.npy')
     # BP_lf = np.load('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/train_BP_mean.npy')
     # BP_lf = BP_lf[0:1000]
 
-    frames = np.load('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/train_frames_test.npy')
-    BP_lf = np.load('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/train_BP_test.npy')
-    print(frames.shape)
+    # frames = np.load('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/train_frames_test.npy')
+    # BP_lf = np.load('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/train_BP_test.npy')
+
+    frames = np.load('/edrive2/zechenzh/preprocessed_v4v_3d/train_frames_test.npy')
+    BP_lf = np.load('/edrive2/zechenzh/preprocessed_v4v_3d/train_BP_test.npy')
 
     # Model setup
     img_rows = 48
