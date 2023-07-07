@@ -325,8 +325,8 @@ def new_data_process(data_type, device_type, dim=48, image=str()):
         saving_path = '/edrive2/zechenzh/preprocessed_v4v/'
     else:
         saving_path = 'C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/'
-    np.save(saving_path+'/edrive2/zechenzh/preprocessed_v4v/' + data_type + '_frames_3d_'+image+'.npy', videos_batch)
-    np.save(saving_path+'/edrive2/zechenzh/preprocessed_v4v/' + data_type + '_BP_3d_systolic.npy', BP_lf)
+    np.save(saving_path + + data_type + '_frames_3d_'+image+'.npy', videos_batch)
+    np.save(saving_path + + data_type + '_BP_3d_systolic.npy', BP_lf)
 
 
 
@@ -444,11 +444,11 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2,
     else:
         path = "/home/zechenzh/checkpoints/"
     if data_type == "test":
-        model.load_weights(path + 'mtts_sys_kernal99_face_drop2_nb256.hdf5')
+        model.load_weights(path + 'mt3d.hdf5')
         model.evaluate(x=(frames[:, :, :, :, :3], frames[:, :, :, :, -3:]), y=BP_lf, batch_size=[nb_batch,5])
     else:
         # early_stop = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=5)
-        save_best_callback = ModelCheckpoint(filepath=path + 'mtts_sys_kernal99_face_drop2_nb256.hdf5',
+        save_best_callback = ModelCheckpoint(filepath=path + 'mt3d.hdf5',
                                              save_best_only=True, verbose=1)
         model.fit(x=(frames[:, :, :, :, :3], frames[:, :, :, :, -3:]), y=BP_lf, batch_size=nb_batch,
                   epochs=nb_epoch, callbacks=[save_best_callback],
@@ -495,9 +495,10 @@ if __name__ == "__main__":
     #                 nb_epoch=args.nb_epoch, multiprocess=args.multiprocess)
     # else:
     #     data_processing_1(data_type=args.data_type, device_type=args.device_type)
-    # data_processing_3(data_type=args.data_type, device_type=args.device_type)
-    # BP_systolic(data_type='valid', device_type='local')
+
+
     new_data_process(data_type=args.data_type, device_type=args.device_type, image=args.image_type)
+
     # new_model_train(data_type=args.data_type, device_type=args.device_type,
     #                 nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
     #                 dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2,
