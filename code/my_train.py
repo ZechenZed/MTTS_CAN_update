@@ -430,6 +430,7 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     input_shape = (frame_depth, img_rows, img_cols, 3)
     print('Using MT_CAN_3D!')
 
+    options = tf.data.Options(report_tensor_allocations_upon_oom = True)
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
     # Create a callback that saves the model's weights
@@ -439,7 +440,7 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
         losses = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
         loss_weights = {"output_1": 1.0}
         opt = "Adam"
-        model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
+        model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt,options=options)
 
     train_data = tf.data.Dataset.from_tensor_slices(((frames[:, :, :, :, :3], frames[:, :, :, :, -3:]), BP_lf))
     val_data = tf.data.Dataset.from_tensor_slices((valid_frames, valid_BP))
@@ -448,7 +449,6 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     train_data = train_data.batch(batch_size)
     val_data = val_data.batch(batch_size)
 
-    options = tf.data.Options(report_tensor_allocations_upon_oom = True)
     options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.OFF
     train_data = train_data.with_options(options)
     val_data = val_data.with_options(options)
