@@ -364,7 +364,6 @@ def new_data_process(data_type, device_type, image=str()):
     max_frame = 0
     for i in range(num_video):
         max_frame = max(max_frame, videos[i].shape[0] // 10 * 10)
-    max_frame = 1610
     videos_batch = np.zeros((num_video, max_frame, 48, 48, 6))
 
     # BP file finding
@@ -489,9 +488,9 @@ if __name__ == "__main__":
                         help='learning rate')
     parser.add_argument('-e', '--nb_dense', type=int, default=256,
                         help='number of dense units')
-    parser.add_argument('-g', '--nb_epoch', type=int, default=12,
+    parser.add_argument('-g', '--nb_epoch', type=int, default=6,
                         help='nb_epoch')
-    parser.add_argument('--nb_batch', type=int, default=4,
+    parser.add_argument('--nb_batch', type=int, default=2,
                         help='nb_batch')
     parser.add_argument('--multiprocess', type=bool, default=False,
                         help='Use multiprocess or not')
