@@ -426,7 +426,7 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     # Model setup
     img_rows = 48
     img_cols = 48
-    frame_depth = 2590
+    frame_depth = 4000
     print('Max Frames: ', frame_depth)
     input_shape = (frame_depth, img_rows, img_cols, 3)
     print('Using MT_CAN_3D!')
