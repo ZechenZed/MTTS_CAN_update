@@ -14,7 +14,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from inference_preprocess import preprocess_raw_video, count_frames
 from model import MTTS_CAN, MT_CAN_3D
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "3,4"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "3,4"
 
 
 # BP --> 25 Hz
@@ -356,7 +356,7 @@ def new_data_process(data_type, device_type, image=str()):
     print('Processing ' + str(num_video) + ' Videos')
 
     # Face cropping in video
-    videos = [Parallel(n_jobs=12)(
+    videos = [Parallel(n_jobs=10)(
         delayed(preprocess_raw_video)(video_folder_path + video) for video in video_file_path)]
     videos = videos[0]
 
