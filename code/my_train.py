@@ -364,9 +364,10 @@ def new_data_process(data_type, device_type, image=str()):
     max_frame = 0
     for i in range(num_video):
         max_frame = max(max_frame, videos[i].shape[0] // 10 * 10)
-    videos_batch = np.zeros((num_video, max_frame, 48, 48, 6))
 
     max_frame = 4000
+    videos_batch = np.zeros((num_video, max_frame, 48, 48, 6))
+
     # BP file finding
     BP_file_path = []
     for path in sorted(os.listdir(BP_folder_path)):
