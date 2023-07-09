@@ -351,21 +351,22 @@ def new_data_process(data_type, device_type, image=str()):
     for path in sorted(os.listdir(video_folder_path)):
         if os.path.isfile(os.path.join(video_folder_path, path)):
             video_file_path.append(path)
-    video_file_path = video_file_path[0:25]
+    # video_file_path = video_file_path[0:50]
     num_video = len(video_file_path)
     print('Processing ' + str(num_video) + ' Videos')
 
     # Face cropping in video
-    videos = [Parallel(n_jobs=10)(
+    videos = [Parallel(n_jobs=16)(
         delayed(preprocess_raw_video)(video_folder_path + video) for video in video_file_path)]
     videos = videos[0]
 
-    # Max Frame finding
-    max_frame = 0
-    for i in range(num_video):
-        max_frame = max(max_frame, videos[i].shape[0] // 10 * 10)
+    # # Max Frame finding
+    # max_frame = 0
+    # for i in range(num_video):
+    #     max_frame = max(max_frame, videos[i].shape[0] // 10 * 10)
 
-    max_frame = 4000
+    max_frame = 5200
+
     videos_batch = np.zeros((num_video, max_frame, 48, 48, 6))
 
     # BP file finding
@@ -444,7 +445,7 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     if device_type == "local":
         path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
     else:
-        path = "/home/zechenzh/checkpoints/"
+        path = "/home/zechenzh/checkpoints_3d/"
     save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
                                          save_best_only=True, verbose=1)
     model.fit(x=(frames[:, :, :, :, :3], frames[:, :, :, :, -3:]), y=BP_lf, batch_size=nb_batch,
