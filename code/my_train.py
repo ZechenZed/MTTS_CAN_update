@@ -365,6 +365,7 @@ def new_data_process(data_type, device_type, image=str()):
     for i in range(num_video):
         max_frame = max(max_frame, videos[i].shape[0] // 10 * 10)
     videos_batch = np.zeros((num_video, max_frame, 48, 48, 6))
+    print(max_frame)
 
     # BP file finding
     BP_file_path = []
@@ -425,7 +426,7 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     # Model setup
     img_rows = 48
     img_cols = 48
-    frame_depth = 1610
+    frame_depth = 2590
     print('Max Frames: ', frame_depth)
     input_shape = (frame_depth, img_rows, img_cols, 3)
     print('Using MT_CAN_3D!')
@@ -505,6 +506,7 @@ if __name__ == "__main__":
     #                 nb_epoch=args.nb_epoch, multiprocess=args.multiprocess)
     # else:
     #     data_processing_1(data_type=args.data_type, device_type=args.device_type)
+    # print(np.load('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/train_frames_3d_face_large.npy').shape[1])
 
     if args.exp_type == "model":
         new_model_train(data_type=args.data_type, device_type=args.device_type,
