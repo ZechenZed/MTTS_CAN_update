@@ -275,13 +275,14 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     # Model setup
     img_rows = dim
     img_cols = dim
-    frame_depth = 25
+    n_video = 25
+    frame_depth = 5200
     # print('Max Frames: ', frame_depth)
-    input_shape = (5200, img_rows, img_cols, 3)
+    input_shape = (frame_depth, img_rows, img_cols, 3)
     print('Using MTTS_CAN!')
 
     # Create a callback that saves the model's weights
-    model = MTTS_CAN(frame_depth, nb_filters1, nb_filters2, input_shape,
+    model = MTTS_CAN(n_video, nb_filters1, nb_filters2, input_shape,
                      dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
                      nb_dense=nb_dense)
     losses = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
