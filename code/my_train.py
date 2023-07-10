@@ -275,14 +275,13 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     # Model setup
     img_rows = dim
     img_cols = dim
-    n_video = 5200
-    frame_depth = 25
+    frame_depth = 5200
     # print('Max Frames: ', frame_depth)
     input_shape = (frame_depth, img_rows, img_cols, 3)
     print('Using MT_CAN_3d')
 
     # Create a callback that saves the model's weights
-    model = MT_CAN_3D(n_video, nb_filters1, nb_filters2, input_shape,
+    model = MT_CAN_3D(frame_depth, nb_filters1, nb_filters2, input_shape,
                       dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
                       nb_dense=nb_dense)
     losses = tf.keras.losses.MeanAbsoluteError()
