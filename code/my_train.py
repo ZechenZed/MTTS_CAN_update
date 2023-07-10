@@ -266,7 +266,7 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
         path = '/edrive2/zechenzh/preprocessed_v4v_batch/'
 
     valid_frames = np.load(path + 'valid_frames_batch_' + image_type + '.npy')
-    valid_BP = np.load(path + 'valid_BP_3d_systolic.npy')
+    valid_BP = np.load(path + 'valid_BP_batch_systolic.npy')
     valid_data = ((valid_frames[:, :, :, :, :3], valid_frames[:, :, :, :, -3:]), valid_BP)
 
     train_frames = np.load(path + 'train_frames_batch_' + image_type + '.npy')
@@ -278,7 +278,7 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     frame_depth = 5200
     print('Max Frames: ', frame_depth)
     input_shape = (img_rows, img_cols, 3)
-    print('Using MT_CAN_3D!')
+    print('Using MTTS_CAN!')
 
     # Create a callback that saves the model's weights
     model = MTTS_CAN(frame_depth, nb_filters1, nb_filters2, input_shape,
