@@ -301,7 +301,8 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     else:
         save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
                                              save_best_only=True, verbose=1)
-        model.fit(x=(train_frames[:, :, :, :, :3], train_frames[:, :, :, :, -3:]), y=train_BP_lf, batch_size=nb_batch,
+        model.fit(x=(train_frames[0:15, :, :, :, :3], train_frames[0:15, :, :, :, -3:]), y=train_BP_lf[0:15],
+                  batch_size=nb_batch,
                   epochs=nb_epoch, callbacks=[save_best_callback], validation_data=valid_data,
                   verbose=1, shuffle=False, use_multiprocessing=multiprocess, validation_freq=3)
 
