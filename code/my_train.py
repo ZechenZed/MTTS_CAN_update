@@ -259,7 +259,7 @@ def new_data_process(data_type, device_type, image=str(), dim=36):
 
 
 def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_rate1, dropout_rate2,
-                    nb_dense, nb_batch, nb_epoch, multiprocess, image_type, dim=36):
+                    nb_dense, nb_batch, nb_epoch, multiprocess, image_type,task_num, dim=36):
     path = str()
     if device_type == "local":
         path = 'C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v_batch/'
@@ -268,42 +268,44 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
 
     valid_frames = np.load(path + 'valid_frames_batch_' + image_type + '.npy')
     valid_BP = np.load(path + 'valid_BP_batch_systolic.npy')
-    valid_data = ((valid_frames[2:4, :, :, :, :3], valid_frames[2:4, :, :, :, -3:]), valid_BP[2:4])
-    print(valid_frames.shape)
+    valid_data = ((valid_frames[task_num*2:(task_num+1)*2, :, :, :, :3],
+                   valid_frames[task_num*2:(task_num+1)*2, :, :, :, -3:]), valid_BP[task_num*2:(task_num+1)*2])
+
     train_frames = np.load(path + 'train_frames_batch_' + image_type + '.npy')
     train_BP_lf = np.load(path + 'train_BP_batch_systolic.npy')
-    print(train_frames.shape, train_BP_lf.shape)
 
-    # # Model setup
-    # img_rows = dim
-    # img_cols = dim
-    # frame_depth = 5200
-    # # print('Max Frames: ', frame_depth)
-    # input_shape = (frame_depth, img_rows, img_cols, 3)
-    # print('Using MT_CAN_3d')
-    #
-    # # Create a callback that saves the model's weights
-    # model = MT_CAN_3D(frame_depth, nb_filters1, nb_filters2, input_shape,
-    #                   dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
-    #                   nb_dense=nb_dense)
-    # losses = tf.keras.losses.MeanAbsoluteError()
-    # loss_weights = {"output_1": 1.0}
-    # opt = "Adam"
-    #
-    # model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
-    #
-    # if device_type == "local":
-    #     path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
-    # else:
-    #     path = "/home/zechenzh/checkpoints_batch/"
-    #
-    # model.load_weights(path + 'mt3d_sys_face_large.hdf5')
-    # save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
-    #                                      save_best_only=True, verbose=1)
-    # model.fit(x=(train_frames[8:16, :, :, :, :3], train_frames[8:16, :, :, :, -3:]), y=train_BP_lf[8:16],
-    #           batch_size=nb_batch,
-    #           epochs=nb_epoch, callbacks=[save_best_callback], validation_data=valid_data,
-    #           verbose=1, shuffle=False, use_multiprocessing=multiprocess, validation_freq=3)
+    # Model setup
+    img_rows = dim
+    img_cols = dim
+    frame_depth = 5200
+    # print('Max Frames: ', frame_depth)
+    input_shape = (frame_depth, img_rows, img_cols, 3)
+    print('Using MT_CAN_3d')
+
+    # Create a callback that saves the model's weights
+    model = MT_CAN_3D(frame_depth, nb_filters1, nb_filters2, input_shape,
+                      dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
+                      nb_dense=nb_dense)
+    losses = tf.keras.losses.MeanAbsoluteError()
+    loss_weights = {"output_1": 1.0}
+    opt = "Adam"
+
+    model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
+
+    if device_type == "local":
+        path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
+    else:
+        path = "/home/zechenzh/checkpoints_batch/"
+
+    model.load_weights(path + 'mt3d_sys_face_large.hdf5')
+    save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
+                                         save_best_only=True, verbose=1)
+    model.fit(x=(train_frames[task_num*5:(task_num+1)*5, :, :, :, :3],
+                 train_frames[task_num*5:(task_num+1)*5, :, :, :, -3:]),
+              y=train_BP_lf[task_num*5:(task_num+1)*5],
+              batch_size=nb_batch,
+              epochs=nb_epoch, callbacks=[save_best_callback], validation_data=valid_data,
+              verbose=1, shuffle=False, use_multiprocessing=multiprocess, validation_freq=3)
 
 
 if __name__ == "__main__":
@@ -348,10 +350,11 @@ if __name__ == "__main__":
     #     new_data_process(data_type=args.data_type, device_type=args.device_type)
 
     if args.exp_type == "model":
-        new_model_train(data_type=args.data_type, device_type=args.device_type,
-                        nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
-                        dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2,
-                        nb_dense=args.nb_dense, nb_batch=args.nb_batch,
-                        nb_epoch=args.nb_epoch, multiprocess=args.multiprocess, image_type=args.image_type)
+        for i in range(5):
+            new_model_train(data_type=args.data_type, device_type=args.device_type,
+                            nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
+                            dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2,
+                            nb_dense=args.nb_dense, nb_batch=args.nb_batch, task_num=i,
+                            nb_epoch=args.nb_epoch, multiprocess=args.multiprocess, image_type=args.image_type)
     else:
         new_data_process(data_type=args.data_type, device_type=args.device_type, image=args.image_type)
