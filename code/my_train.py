@@ -14,7 +14,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from inference_preprocess import preprocess_raw_video, count_frames
 from model import MTTS_CAN, MT_CAN_3D
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1,5,7"
+os.environ["CUDA_VISIBLE_DEVICES"] = "5,6,7"
 
 
 # BP --> 25 Hz
