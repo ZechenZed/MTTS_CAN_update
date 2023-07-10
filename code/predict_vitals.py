@@ -92,7 +92,7 @@ def filter_fxn(pre_HR, cur_HR, cap):
 def predict_vitals(video_name, dir_path, data_set, filter):
     img_rows = 36
     img_cols = 36
-    frame_depth = 1
+    frame_depth = 10
     model_checkpoint = "../mtts_can.hdf5"
     batch_size = 10
     fs = 25
