@@ -278,11 +278,11 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     n_video = 25
     frame_depth = 5200
     # print('Max Frames: ', frame_depth)
-    input_shape = (frame_depth, img_rows, img_cols, 3)
-    print('Using MTTS_CAN!')
+    input_shape = (img_rows, img_cols, frame_depth, 3)
+    print('Using MT_CAN_3d')
 
     # Create a callback that saves the model's weights
-    model = MTTS_CAN(n_video, nb_filters1, nb_filters2, input_shape,
+    model = MT_CAN_3D(n_video, nb_filters1, nb_filters2, input_shape,
                      dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
                      nb_dense=nb_dense)
     losses = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
@@ -298,11 +298,11 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
         model.load_weights(path + 'mt3d_sys_face_large.hdf5')
         model.evaluate(x=(train_frames[:, :, :, :, :3], train_frames[:, :, :, :, -3:]), y=train_BP_lf, batch_size=nb_batch)
     else:
-        save_best_callback = ModelCheckpoint(filepath=path + 'mtts_batch.hdf5',
+        save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
                                              save_best_only=True, verbose=1)
         model.fit(x=(train_frames[:, :, :, :, :3], train_frames[:, :, :, :, -3:]), y=train_BP_lf, batch_size=nb_batch,
                   epochs=nb_epoch, callbacks=[save_best_callback], validation_data=valid_data,
-                  verbose=1, shuffle=False, use_multiprocessing=multiprocess,validation_freq=3)
+                  verbose=1, shuffle=False, use_multiprocessing=multiprocess, validation_freq=3)
 
 
 if __name__ == "__main__":
