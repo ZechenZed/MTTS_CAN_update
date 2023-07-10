@@ -48,9 +48,9 @@ def peaks():
     plt.show()
 
 
-def my_predict(data_type, dataset_type, kernal):
-    img_rows = 48
-    img_cols = 48
+def my_predict(data_type, dataset_type, kernal, dim):
+    img_rows = dim
+    img_cols = dim
     frame_depth = 1
     batch_size = 32
     path = 'C:/Users/Zed/Desktop/Project-BMFG'

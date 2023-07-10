@@ -19,7 +19,7 @@ from model import MTTS_CAN, MT_CAN_3D
 
 
 # BP --> 25 Hz
-def data_processing_1(data_type, device_type, dim=48):
+def data_processing_1(data_type, device_type, dim=36):
     if device_type == "local":
         video_train_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/"
         video_valid_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/valid/"
@@ -52,7 +52,7 @@ def data_processing_1(data_type, device_type, dim=48):
     for path in sorted(os.listdir(video_folder_path)):
         if os.path.isfile(os.path.join(video_folder_path, path)):
             video_file_path.append(path)
-    video_file_path = video_file_path[0:10]
+    video_file_path = video_file_path[0:25]
     num_video = len(video_file_path)
     print(num_video)
 
@@ -214,7 +214,6 @@ def new_data_process(data_type, device_type, image=str(), dim=36):
     #     max_frame = max(max_frame, videos[i].shape[0] // 10 * 10)
 
     max_frame = 5200
-
     videos_batch = np.zeros((num_video, max_frame, dim, dim, 6))
 
     # BP file finding
@@ -251,41 +250,40 @@ def new_data_process(data_type, device_type, image=str(), dim=36):
 
     saving_path = str()
     if device_type == "remote":
-        saving_path = '/edrive2/zechenzh/preprocessed_v4v_3d/'
+        saving_path = '/edrive2/zechenzh/preprocessed_v4v_batch/'
     else:
-        saving_path = 'C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v_3d/'
-    np.save(saving_path + data_type + '_frames_3d_' + image + '.npy', videos_batch)
-    np.save(saving_path + data_type + '_BP_3d_systolic.npy', BP_lf)
+        saving_path = 'C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v_batch/'
+    np.save(saving_path + data_type + '_frames_batch_' + image + '.npy', videos_batch)
+    np.save(saving_path + data_type + '_BP_batch_systolic.npy', BP_lf)
 
 
 def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_rate1, dropout_rate2,
                     nb_dense, nb_batch, nb_epoch, multiprocess, image_type, dim=36):
     path = str()
     if device_type == "local":
-        path = 'C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/'
+        path = 'C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v_batch/'
     else:
-        path = '/edrive2/zechenzh/preprocessed_v4v_3d/'
+        path = '/edrive2/zechenzh/preprocessed_v4v_batch/'
 
-    valid_frames = np.load(path + 'valid_frames_3d_' + image_type + '.npy')
+    valid_frames = np.load(path + 'valid_frames_batch_' + image_type + '.npy')
     valid_BP = np.load(path + 'valid_BP_3d_systolic.npy')
     valid_data = ((valid_frames[:, :, :, :, :3], valid_frames[:, :, :, :, -3:]), valid_BP)
 
-    frames = np.load(path + 'train_frames_3d_' + image_type + '.npy')
-    BP_lf = np.load(path + 'train_BP_3d_systolic.npy')
+    train_frames = np.load(path + 'train_frames_batch_' + image_type + '.npy')
+    train_BP_lf = np.load(path + 'train_BP_batch_systolic.npy')
 
     # Model setup
     img_rows = dim
     img_cols = dim
-    frame_depth = 4000
+    frame_depth = 5200
     print('Max Frames: ', frame_depth)
-    input_shape = (frame_depth, img_rows, img_cols, 3)
+    input_shape = (img_rows, img_cols, 3)
     print('Using MT_CAN_3D!')
 
-
     # Create a callback that saves the model's weights
-    model = MT_CAN_3D(frame_depth, nb_filters1, nb_filters2, input_shape,
-                      dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
-                      nb_dense=nb_dense)
+    model = MTTS_CAN(frame_depth, nb_filters1, nb_filters2, input_shape,
+                     dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
+                     nb_dense=nb_dense)
     losses = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
     loss_weights = {"output_1": 1.0}
     opt = "Adam"
@@ -294,27 +292,16 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     if device_type == "local":
         path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
     else:
-        path = "/home/zechenzh/checkpoints_3d/"
-    save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
-                                         save_best_only=True, verbose=1)
-    model.fit(x=(frames[:, :, :, :, :3], frames[:, :, :, :, -3:]), y=BP_lf, batch_size=nb_batch,
-              epochs=nb_epoch, callbacks=[save_best_callback], validation_data=valid_data,
-              verbose=1, shuffle=False, use_multiprocessing=multiprocess)
-
-    # if device_type == "local":
-    #     path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
-    # else:
-    #     path = "/home/zechenzh/checkpoints/"
-    # if data_type == "test":
-    #     model.load_weights(path + 'mt3d_sys_face_large.hdf5')
-    #     model.evaluate(x=(frames[:, :, :, :, :3], frames[:, :, :, :, -3:]), y=BP_lf, batch_size=nb_batch)
-    # else:
-    #     # early_stop = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=5)
-    #     save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
-    #                                          save_best_only=True, verbose=1)
-    #     model.fit(x=(frames[:, :, :, :, :3], frames[:, :, :, :, -3:]), y=BP_lf, batch_size=nb_batch,
-    #               epochs=nb_epoch, callbacks=[save_best_callback], validation_data=valid_data,
-    #               verbose=1, shuffle=False, use_multiprocessing=multiprocess)
+        path = "/home/zechenzh/checkpoints_batch/"
+    if data_type == "test":
+        model.load_weights(path + 'mt3d_sys_face_large.hdf5')
+        model.evaluate(x=(train_frames[:, :, :, :, :3], train_frames[:, :, :, :, -3:]), y=train_BP_lf, batch_size=nb_batch)
+    else:
+        save_best_callback = ModelCheckpoint(filepath=path + 'mtts_batch.hdf5',
+                                             save_best_only=True, verbose=1)
+        model.fit(x=(train_frames[:, :, :, :, :3], train_frames[:, :, :, :, -3:]), y=train_BP_lf, batch_size=nb_batch,
+                  epochs=nb_epoch, callbacks=[save_best_callback], validation_data=valid_data,
+                  verbose=1, shuffle=False, use_multiprocessing=multiprocess,validation_freq=3)
 
 
 if __name__ == "__main__":
@@ -338,11 +325,11 @@ if __name__ == "__main__":
                         help='dropout rates')
     parser.add_argument('-l', '--lr', type=float, default=1.0,
                         help='learning rate')
-    parser.add_argument('-e', '--nb_dense', type=int, default=256,
+    parser.add_argument('-e', '--nb_dense', type=int, default=128,
                         help='number of dense units')
-    parser.add_argument('-g', '--nb_epoch', type=int, default=6,
+    parser.add_argument('-g', '--nb_epoch', type=int, default=15,
                         help='nb_epoch')
-    parser.add_argument('--nb_batch', type=int, default=2,
+    parser.add_argument('--nb_batch', type=int, default=32,
                         help='nb_batch')
     parser.add_argument('--multiprocess', type=bool, default=True,
                         help='Use multiprocess or not')
@@ -356,8 +343,7 @@ if __name__ == "__main__":
     #                 nb_dense=args.nb_dense, nb_batch=args.nb_batch,
     #                 nb_epoch=args.nb_epoch, multiprocess=args.multiprocess)
     # else:
-    #     data_processing_1(data_type=args.data_type, device_type=args.device_type)
-    # print(np.load('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/train_frames_3d_face_large.npy').shape[1])
+    #     new_data_process(data_type=args.data_type, device_type=args.device_type)
 
     if args.exp_type == "model":
         new_model_train(data_type=args.data_type, device_type=args.device_type,
