@@ -271,7 +271,7 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
 
     train_frames = np.load(path + 'train_frames_batch_' + image_type + '.npy')
     train_BP_lf = np.load(path + 'train_BP_batch_systolic.npy')
-
+    print(train_frames.shape,train_BP_lf.shape)
     # Model setup
     img_rows = dim
     img_cols = dim
@@ -285,7 +285,7 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     model = MT_CAN_3D(n_video, nb_filters1, nb_filters2, input_shape,
                      dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
                      nb_dense=nb_dense)
-    losses = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
+    losses = tf.keras.losses.MeanAbsoluteError()
     loss_weights = {"output_1": 1.0}
     opt = "Adam"
     model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
