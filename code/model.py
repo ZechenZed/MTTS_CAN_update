@@ -27,8 +27,8 @@ class Attention_mask(tf.keras.layers.Layer):
 
 class TSM(tf.keras.layers.Layer):
     def call(self, x, n_frame, fold_div=3):
-        nt, h, w, c = x.shape
-        x = K.reshape(x, (-1, n_frame, h, w, c))
+        nt, _, h, w, c = x.shape
+        x = K.reshape(x, (-1, nt, n_frame, h, w, c))
         fold = c // fold_div
         last_fold = c - (fold_div - 1) * fold
         out1, out2, out3 = tf.split(x, [fold, fold, last_fold], axis=-1)
