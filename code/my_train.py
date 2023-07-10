@@ -14,7 +14,6 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from inference_preprocess import preprocess_raw_video, count_frames
 from model import MTTS_CAN, MT_CAN_3D
 
-
 os.environ["CUDA_VISIBLE_DEVICES"] = "3,4,6"
 
 
@@ -271,20 +270,21 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
 
     train_frames = np.load(path + 'train_frames_batch_' + image_type + '.npy')
     train_BP_lf = np.load(path + 'train_BP_batch_systolic.npy')
-    print(train_frames.shape,train_BP_lf.shape)
+    print(train_frames.shape, train_BP_lf.shape)
+
     # Model setup
     img_rows = dim
     img_cols = dim
-    n_video = 25
-    frame_depth = 5200
+    n_video = 5200
+    frame_depth = 25
     # print('Max Frames: ', frame_depth)
     input_shape = (frame_depth, img_rows, img_cols, 3)
     print('Using MT_CAN_3d')
 
     # Create a callback that saves the model's weights
     model = MT_CAN_3D(n_video, nb_filters1, nb_filters2, input_shape,
-                     dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
-                     nb_dense=nb_dense)
+                      dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
+                      nb_dense=nb_dense)
     losses = tf.keras.losses.MeanAbsoluteError()
     loss_weights = {"output_1": 1.0}
     opt = "Adam"
@@ -296,7 +296,8 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
         path = "/home/zechenzh/checkpoints_batch/"
     if data_type == "test":
         model.load_weights(path + 'mt3d_sys_face_large.hdf5')
-        model.evaluate(x=(train_frames[:, :, :, :, :3], train_frames[:, :, :, :, -3:]), y=train_BP_lf, batch_size=nb_batch)
+        model.evaluate(x=(train_frames[:, :, :, :, :3], train_frames[:, :, :, :, -3:]), y=train_BP_lf,
+                       batch_size=nb_batch)
     else:
         save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
                                              save_best_only=True, verbose=1)
