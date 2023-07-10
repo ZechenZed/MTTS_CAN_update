@@ -282,15 +282,17 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     input_shape = (frame_depth, img_rows, img_cols, 3)
     print('Using MT_CAN_3d')
 
-    # Create a callback that saves the model's weights
-    model = MT_CAN_3D(frame_depth, nb_filters1, nb_filters2, input_shape,
-                      dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
-                      nb_dense=nb_dense)
-    losses = tf.keras.losses.MeanAbsoluteError()
-    loss_weights = {"output_1": 1.0}
-    opt = "Adam"
+    mirrored_strategy = tf.distribute.MirroredStrategy()
+    with mirrored_strategy.scope():
+        # Create a callback that saves the model's weights
+        model = MT_CAN_3D(frame_depth, nb_filters1, nb_filters2, input_shape,
+                          dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
+                          nb_dense=nb_dense)
+        losses = tf.keras.losses.MeanAbsoluteError()
+        loss_weights = {"output_1": 1.0}
+        opt = "Adam"
 
-    model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
+        model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
 
     if device_type == "local":
         path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
