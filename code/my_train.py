@@ -269,41 +269,41 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     valid_frames = np.load(path + 'valid_frames_batch_' + image_type + '.npy')
     valid_BP = np.load(path + 'valid_BP_batch_systolic.npy')
     valid_data = ((valid_frames[2:4, :, :, :, :3], valid_frames[2:4, :, :, :, -3:]), valid_BP[2:4])
-
+    print(valid_frames.shape)
     train_frames = np.load(path + 'train_frames_batch_' + image_type + '.npy')
     train_BP_lf = np.load(path + 'train_BP_batch_systolic.npy')
     print(train_frames.shape, train_BP_lf.shape)
 
-    # Model setup
-    img_rows = dim
-    img_cols = dim
-    frame_depth = 5200
-    # print('Max Frames: ', frame_depth)
-    input_shape = (frame_depth, img_rows, img_cols, 3)
-    print('Using MT_CAN_3d')
-
-    # Create a callback that saves the model's weights
-    model = MT_CAN_3D(frame_depth, nb_filters1, nb_filters2, input_shape,
-                      dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
-                      nb_dense=nb_dense)
-    losses = tf.keras.losses.MeanAbsoluteError()
-    loss_weights = {"output_1": 1.0}
-    opt = "Adam"
-
-    model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
-
-    if device_type == "local":
-        path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
-    else:
-        path = "/home/zechenzh/checkpoints_batch/"
-
-    model.load_weights(path + 'mt3d_sys_face_large.hdf5')
-    save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
-                                         save_best_only=True, verbose=1)
-    model.fit(x=(train_frames[8:16, :, :, :, :3], train_frames[8:16, :, :, :, -3:]), y=train_BP_lf[8:16],
-              batch_size=nb_batch,
-              epochs=nb_epoch, callbacks=[save_best_callback], validation_data=valid_data,
-              verbose=1, shuffle=False, use_multiprocessing=multiprocess, validation_freq=3)
+    # # Model setup
+    # img_rows = dim
+    # img_cols = dim
+    # frame_depth = 5200
+    # # print('Max Frames: ', frame_depth)
+    # input_shape = (frame_depth, img_rows, img_cols, 3)
+    # print('Using MT_CAN_3d')
+    #
+    # # Create a callback that saves the model's weights
+    # model = MT_CAN_3D(frame_depth, nb_filters1, nb_filters2, input_shape,
+    #                   dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
+    #                   nb_dense=nb_dense)
+    # losses = tf.keras.losses.MeanAbsoluteError()
+    # loss_weights = {"output_1": 1.0}
+    # opt = "Adam"
+    #
+    # model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
+    #
+    # if device_type == "local":
+    #     path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
+    # else:
+    #     path = "/home/zechenzh/checkpoints_batch/"
+    #
+    # model.load_weights(path + 'mt3d_sys_face_large.hdf5')
+    # save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
+    #                                      save_best_only=True, verbose=1)
+    # model.fit(x=(train_frames[8:16, :, :, :, :3], train_frames[8:16, :, :, :, -3:]), y=train_BP_lf[8:16],
+    #           batch_size=nb_batch,
+    #           epochs=nb_epoch, callbacks=[save_best_callback], validation_data=valid_data,
+    #           verbose=1, shuffle=False, use_multiprocessing=multiprocess, validation_freq=3)
 
 
 if __name__ == "__main__":
@@ -331,7 +331,7 @@ if __name__ == "__main__":
                         help='number of dense units')
     parser.add_argument('-g', '--nb_epoch', type=int, default=15,
                         help='nb_epoch')
-    parser.add_argument('--nb_batch', type=int, default=32,
+    parser.add_argument('--nb_batch', type=int, default=16,
                         help='nb_batch')
     parser.add_argument('--multiprocess', type=bool, default=True,
                         help='Use multiprocess or not')
