@@ -65,8 +65,8 @@ def TSM_Cov2D(x, n_frame, nb_filters=128, kernel_size=(3, 3), activation='tanh',
 
 # %%
 # %% MTTS-CAN
-def MTTS_CAN(n_frame, nb_filters1, nb_filters2, input_shape, kernel_size=(9, 9), dropout_rate1=0.125,
-             dropout_rate2=0.5, pool_size=(2, 2), nb_dense=256):
+def MTTS_CAN(n_frame, nb_filters1, nb_filters2, input_shape, kernel_size=(3, 3), dropout_rate1=0.25,
+             dropout_rate2=0.5, pool_size=(2, 2), nb_dense=128):
     diff_input = Input(shape=input_shape)
     rawf_input = Input(shape=input_shape)
 
@@ -288,11 +288,6 @@ def CAN_3D(n_frame, nb_filters1, nb_filters2, input_shape, kernel_size=(3, 3, 3)
     return model
 
 
-# input_shape = (36, 36, 10, 3)
-# model = DeepPhy_3DCNN(10, 32, 64, input_shape)
-# print('==========================')
-
-
 # %%
 def MT_CAN_3D(n_frame, nb_filters1, nb_filters2, input_shape, kernel_size=(3, 3, 3), dropout_rate1=0.25,
               dropout_rate2=0.5, pool_size=(2, 2, 2), nb_dense=128):
@@ -465,5 +460,3 @@ class HeartBeat(keras.callbacks.Callback):
 
     def on_epoch_end(self, epoch, logs={}):
         print('PROGRESS: 0.00%')
-
-

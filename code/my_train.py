@@ -14,7 +14,8 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from inference_preprocess import preprocess_raw_video, count_frames
 from model import MTTS_CAN, MT_CAN_3D
 
-# os.environ["CUDA_VISIBLE_DEVICES"] = "4,5,6,7"
+
+# os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 
 # BP --> 25 Hz
@@ -92,155 +93,6 @@ def data_processing_1(data_type, device_type, dim=48):
         np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_BP_mean.npy', BP_lf)
 
 
-# Video --> 1000Hz(Not recommended)
-def data_processing_2(data_type, device_type):
-    if device_type == "local":
-        video_train_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/"
-        video_valid_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/valid/"
-        video_test_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/Videos/test/"
-        BP_phase1_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Ground_truth/BP_raw_1KHz/"
-        BP_test_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/blood_pressure/test_set_bp/"
-    else:
-        video_train_path = "../../../../edrive2/zechenzh/V4V/Phase1_data/Videos/train/"
-        video_valid_path = "../../../../edrive2/zechenzh/V4V/Phase1_data/Videos/valid/"
-        video_test_path = "../../../../edrive2/zechenzh/V4V/Phase2_data/Videos/test/"
-        BP_phase1_path = "../../../../edrive2/zechenzh/V4V/Phase1_data/Ground_truth/BP_raw_1KHz/"
-        BP_test_path = "../../../../edrive2/zechenzh/V4V/Phase2_data/blood_pressure/test_set_bp/"
-
-    video_folder_path = ""
-    BP_folder_path = ""
-    if data_type == "train":
-        video_folder_path = video_train_path
-        BP_folder_path = BP_phase1_path
-    else:
-        video_folder_path = video_test_path
-        BP_folder_path = BP_test_path
-
-    # Video path reading
-    video_file_path = []
-    for path in sorted(os.listdir(video_folder_path)):
-        if os.path.isfile(os.path.join(video_folder_path, path)):
-            video_file_path.append(path)
-    video_file_path = video_file_path[0:10]
-    num_video = len(video_file_path)
-
-    # Video processing
-    videos = [Parallel(n_jobs=-1)(
-        delayed(preprocess_raw_video)(video_folder_path + video) for video in video_file_path)]
-    videos = videos[0]
-
-    # BP path reading
-    BP_file_path = []
-    for path in sorted(os.listdir(BP_folder_path)):
-        if os.path.isfile(os.path.join(BP_folder_path, path)):
-            BP_file_path.append(path)
-
-    # BP file reading
-    BP_lf = []
-    tt_frame = 0
-    frame_video = []
-    for i in range(num_video):
-        BP_temp = np.loadtxt(BP_folder_path + BP_file_path[i])
-        cur_frames = BP_temp.shape[0] // 1000 * 1000
-        frame_video.append(cur_frames)
-        tt_frame += cur_frames
-        BP_temp_med = medfilt(BP_temp[0:cur_frames])
-        for ind, element in enumerate(BP_temp_med):
-            BP_lf.append(element)
-    BP_lf = np.array(BP_lf)
-
-    # BP & Video frame processing
-    frames = np.zeros(shape=(tt_frame, 36, 36, 6))
-    frame_ind = 0
-    for i in range(num_video):
-        temp_video = videos[i]
-        cur_frames = frame_video[i]
-        temp_video_expand = np.zeros(shape=(cur_frames, 36, 36, 6))
-        for j in range(0, int(cur_frames / 40)):
-            temp_video_expand[40 * j:40 * (j + 1), :, :, :] = temp_video[j, :, :, :]
-        frames[frame_ind:frame_ind + cur_frames] = temp_video_expand
-        frame_ind += cur_frames
-
-    # Saving processed frames
-    if device_type == "remote":
-        np.save('../../../../edrive2/zechenzh/preprocessed_v4v/' + data_type + '_frames_v2.npy', frames)
-        np.save('../../../../edrive2/zechenzh/preprocessed_v4v/' + data_type + '_BP_v2.npy', BP_lf)
-    else:
-        np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_frames_v2.npy', frames)
-        np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_BP_v2.npy', BP_lf)
-    print("###########Preprocess finished###########")
-
-
-def data_processing_3(data_type, device_type, dim=48):
-    if device_type == "local":
-        video_train_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/"
-        video_valid_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/valid/"
-        video_test_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/Videos/test/"
-        BP_phase1_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Ground_truth/BP_raw_1KHz/"
-        BP_val_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/blood_pressure/val_set_bp/"
-        BP_test_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/blood_pressure/test_set_bp/"
-    else:
-        video_train_path = "/edrive2/zechenzh/V4V/Phase1_data/Videos/train/"
-        video_valid_path = "/edrive2/zechenzh/V4V/Phase1_data/Videos/valid/"
-        video_test_path = "/edrive2/zechenzh/V4V/Phase2_data/Videos/test/"
-        BP_phase1_path = "/edrive2/zechenzh/V4V/Phase1_data/Ground_truth/BP_raw_1KHz/"
-        BP_val_path = "/edrive2/zechenzh/V4V/Phase2_data/blood_pressure/val_set_bp/"
-        BP_test_path = "/edrive2/zechenzh/V4V/Phase2_data/blood_pressure/test_set_bp/"
-
-    video_folder_path = ""
-    BP_folder_path = ""
-    if data_type == "train":
-        video_folder_path = video_train_path
-        BP_folder_path = BP_phase1_path
-    elif data_type == "test":
-        video_folder_path = video_test_path
-        BP_folder_path = BP_test_path
-    else:
-        video_folder_path = video_valid_path
-        BP_folder_path = BP_val_path
-
-    # Video path reading
-    video_file_path = []
-    for path in sorted(os.listdir(video_folder_path)):
-        if os.path.isfile(os.path.join(video_folder_path, path)):
-            video_file_path.append(path)
-    # video_file_path = video_file_path[0:2]
-    num_video = len(video_file_path)
-    print(num_video)
-
-    videos = [Parallel(n_jobs=10)(
-        delayed(count_frames)(video_folder_path + video) for video in video_file_path)]
-    videos = videos[0]
-
-    tt_frame = 0
-    for i in range(num_video):
-        tt_frame += videos[i] // 10 * 10
-
-    # BP path reading
-    BP_file_path = []
-    for path in sorted(os.listdir(BP_folder_path)):
-        if os.path.isfile(os.path.join(BP_folder_path, path)):
-            BP_file_path.append(path)
-
-    # BP & Video frame processing
-    BP_v3 = np.zeros(shape=(tt_frame, 40))
-    frame_ind = 0
-    for j in range(num_video):
-        temp = np.loadtxt(BP_folder_path + BP_file_path[j])
-        cur_frames = videos[j] // 10 * 10
-        temp_BP = np.zeros(shape=(cur_frames, 40))
-        for i in range(0, cur_frames):
-            temp_BP[i, :] = temp[40 * i:40 * (i + 1)]
-        BP_v3[frame_ind:frame_ind + cur_frames, :] = temp_BP
-        frame_ind += cur_frames
-
-    # Saving processed frames
-    if device_type == "remote":
-        np.save('/edrive2/zechenzh/preprocessed_v4v/' + data_type + '_BP_batch.npy', BP_v3)
-    else:
-        np.save('C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/' + data_type + '_BP_batch.npy', BP_v3)
-
-
 def BP_systolic(data_type, device_type):
     if device_type == "local":
         BP_folder_path = "C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/"
@@ -260,10 +112,6 @@ def BP_systolic(data_type, device_type):
     y_interp = interp1d([prev_index, size - 1], [BP[prev_index], BP[size - 1]])
     for i in range(prev_index, size):
         BP_inter[i] = y_interp(i)
-
-    # plt.plot(BP, label='Original')
-    # plt.plot(BP_inter, label='peaks')
-    # plt.show()
 
     # Saving processed frames
     if device_type == "remote":
@@ -318,7 +166,7 @@ def model_train(data_type, device_type, nb_filters1, nb_filters2,
 
 
 #########################################################################################
-def new_data_process(data_type, device_type, image=str(),dim=36):
+def new_data_process(data_type, device_type, image=str(), dim=36):
     if device_type == "local":
         video_train_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/"
         video_valid_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/valid/"
@@ -351,12 +199,12 @@ def new_data_process(data_type, device_type, image=str(),dim=36):
     for path in sorted(os.listdir(video_folder_path)):
         if os.path.isfile(os.path.join(video_folder_path, path)):
             video_file_path.append(path)
-    video_file_path = video_file_path[0:362]
+    video_file_path = video_file_path[0:25]
     num_video = len(video_file_path)
     print('Processing ' + str(num_video) + ' Videos')
 
     # Face cropping in video
-    videos = [Parallel(n_jobs=8)(
+    videos = [Parallel(n_jobs=16)(
         delayed(preprocess_raw_video)(video_folder_path + video, dim) for video in video_file_path)]
     videos = videos[0]
 
@@ -411,7 +259,7 @@ def new_data_process(data_type, device_type, image=str(),dim=36):
 
 
 def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_rate1, dropout_rate2,
-                    nb_dense, nb_batch, nb_epoch, multiprocess, image_type,dim = 36):
+                    nb_dense, nb_batch, nb_epoch, multiprocess, image_type, dim=36):
     path = str()
     if device_type == "local":
         path = 'C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/'
@@ -433,27 +281,25 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     input_shape = (frame_depth, img_rows, img_cols, 3)
     print('Using MT_CAN_3D!')
 
-    mirrored_strategy = tf.distribute.MirroredStrategy()
 
-    with mirrored_strategy.scope():
     # Create a callback that saves the model's weights
-        model = MT_CAN_3D(frame_depth, nb_filters1, nb_filters2, input_shape,
-                          dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
-                          nb_dense=nb_dense)
-        losses = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
-        loss_weights = {"output_1": 1.0}
-        opt = "Adam"
-        model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
+    model = MT_CAN_3D(frame_depth, nb_filters1, nb_filters2, input_shape,
+                      dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
+                      nb_dense=nb_dense)
+    losses = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
+    loss_weights = {"output_1": 1.0}
+    opt = "Adam"
+    model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
 
-        if device_type == "local":
-            path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
-        else:
-            path = "/home/zechenzh/checkpoints_3d/"
-        save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
-                                             save_best_only=True, verbose=1)
-        model.fit(x=(frames[:, :, :, :, :3], frames[:, :, :, :, -3:]), y=BP_lf, batch_size=nb_batch,
-                  epochs=nb_epoch, callbacks=[save_best_callback], validation_data=valid_data,
-                  verbose=1, shuffle=False, use_multiprocessing=multiprocess)
+    if device_type == "local":
+        path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
+    else:
+        path = "/home/zechenzh/checkpoints_3d/"
+    save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
+                                         save_best_only=True, verbose=1)
+    model.fit(x=(frames[:, :, :, :, :3], frames[:, :, :, :, -3:]), y=BP_lf, batch_size=nb_batch,
+              epochs=nb_epoch, callbacks=[save_best_callback], validation_data=valid_data,
+              verbose=1, shuffle=False, use_multiprocessing=multiprocess)
 
     # if device_type == "local":
     #     path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
