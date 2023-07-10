@@ -266,7 +266,7 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
 
     valid_frames = np.load(path + 'valid_frames_batch_' + image_type + '.npy')
     valid_BP = np.load(path + 'valid_BP_batch_systolic.npy')
-    valid_data = ((valid_frames[:, :, :, :, :3], valid_frames[:, :, :, :, -3:]), valid_BP)
+    valid_data = ((valid_frames[0:5, :, :, :, :3], valid_frames[0:5, :, :, :, -3:]), valid_BP)
 
     train_frames = np.load(path + 'train_frames_batch_' + image_type + '.npy')
     train_BP_lf = np.load(path + 'train_BP_batch_systolic.npy')
@@ -296,7 +296,7 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
         path = "/home/zechenzh/checkpoints_batch/"
     if data_type == "test":
         model.load_weights(path + 'mt3d_sys_face_large.hdf5')
-        model.evaluate(x=(train_frames[:, :, :, :, :3], train_frames[:, :, :, :, -3:]), y=train_BP_lf,
+        model.evaluate(x=(train_frames[0:15, :, :, :, :3], train_frames[0:15, :, :, :, -3:]), y=train_BP_lf[0:15],
                        batch_size=nb_batch)
     else:
         save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
