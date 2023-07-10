@@ -433,24 +433,27 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     input_shape = (frame_depth, img_rows, img_cols, 3)
     print('Using MT_CAN_3D!')
 
-    # Create a callback that saves the model's weights
-    model = MT_CAN_3D(frame_depth, nb_filters1, nb_filters2, input_shape,
-                      dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
-                      nb_dense=nb_dense)
-    losses = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
-    loss_weights = {"output_1": 1.0}
-    opt = "Adam"
-    model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
+    mirrored_strategy = tf.distribute.MirroredStrategy()
 
-    if device_type == "local":
-        path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
-    else:
-        path = "/home/zechenzh/checkpoints_3d/"
-    save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
-                                         save_best_only=True, verbose=1)
-    model.fit(x=(frames[:, :, :, :, :3], frames[:, :, :, :, -3:]), y=BP_lf, batch_size=nb_batch,
-              epochs=nb_epoch, callbacks=[save_best_callback], validation_data=valid_data,
-              verbose=1, shuffle=False, use_multiprocessing=multiprocess)
+    with mirrored_strategy.scope():
+    # Create a callback that saves the model's weights
+        model = MT_CAN_3D(frame_depth, nb_filters1, nb_filters2, input_shape,
+                          dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
+                          nb_dense=nb_dense)
+        losses = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
+        loss_weights = {"output_1": 1.0}
+        opt = "Adam"
+        model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
+
+        if device_type == "local":
+            path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
+        else:
+            path = "/home/zechenzh/checkpoints_3d/"
+        save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
+                                             save_best_only=True, verbose=1)
+        model.fit(x=(frames[:, :, :, :, :3], frames[:, :, :, :, -3:]), y=BP_lf, batch_size=nb_batch,
+                  epochs=nb_epoch, callbacks=[save_best_callback], validation_data=valid_data,
+                  verbose=1, shuffle=False, use_multiprocessing=multiprocess)
 
     # if device_type == "local":
     #     path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
