@@ -287,7 +287,8 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     losses = tf.keras.losses.MeanAbsoluteError()
     loss_weights = {"output_1": 1.0}
     opt = "Adam"
-    run_opts = tf.RunOptions(report_tensor_allocations_upon_oom=True)
+
+    run_opts = tf.data.Options(report_tensor_allocations_upon_oom=True)
     model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt, options=run_opts)
 
     if device_type == "local":
