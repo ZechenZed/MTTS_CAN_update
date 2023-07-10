@@ -281,7 +281,7 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     print('Using MTTS_CAN!')
 
     # Create a callback that saves the model's weights
-    model = MTTS_CAN(frame_depth, nb_filters1, nb_filters2, input_shape,
+    model = MTTS_CAN(25, frame_depth, nb_filters1, nb_filters2, input_shape,
                      dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
                      nb_dense=nb_dense)
     losses = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
