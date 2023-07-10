@@ -259,12 +259,20 @@ def new_data_process(data_type, device_type, image=str(), dim=36):
 
 
 def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_rate1, dropout_rate2,
-                    nb_dense, nb_batch, nb_epoch, multiprocess, image_type, task_num, dim=36):
+                    nb_dense, nb_batch, nb_epoch, multiprocess, image_type,task_num, dim=36):
     path = str()
     if device_type == "local":
         path = 'C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v_batch/'
     else:
         path = '/edrive2/zechenzh/preprocessed_v4v_batch/'
+
+    valid_frames = np.load(path + 'valid_frames_batch_' + image_type + '.npy')
+    valid_BP = np.load(path + 'valid_BP_batch_systolic.npy')
+    valid_data = ((valid_frames[task_num*2:(task_num+1)*2, :, :, :, :3],
+                   valid_frames[task_num*2:(task_num+1)*2, :, :, :, -3:]), valid_BP[task_num*2:(task_num+1)*2])
+
+    train_frames = np.load(path + 'train_frames_batch_' + image_type + '.npy')
+    train_BP_lf = np.load(path + 'train_BP_batch_systolic.npy')
 
     # Model setup
     img_rows = dim
@@ -274,40 +282,15 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     input_shape = (frame_depth, img_rows, img_cols, 3)
     print('Using MT_CAN_3d')
 
-    strategy = tf.distribute.experimental.MultiWorkerMirroredStrategy()
-    with strategy.scope():
-        # Create a callback that saves the model's weights
-        model = MT_CAN_3D(frame_depth, nb_filters1, nb_filters2, input_shape,
-                          dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
-                          nb_dense=nb_dense)
-        losses = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.NONE)
-        loss_weights = {"output_1": 1.0}
-        opt = "Adam"
+    # Create a callback that saves the model's weights
+    model = MT_CAN_3D(frame_depth, nb_filters1, nb_filters2, input_shape,
+                      dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
+                      nb_dense=nb_dense)
+    losses = tf.keras.losses.MeanAbsoluteError()
+    loss_weights = {"output_1": 1.0}
+    opt = "Adam"
 
-        model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
-
-    valid_frames = np.load(path + 'valid_frames_batch_' + image_type + '.npy')
-    valid_BP = np.load(path + 'valid_BP_batch_systolic.npy')
-    # valid_data = ((valid_frames[task_num*2:(task_num+1)*2, :, :, :, :3],
-    #                valid_frames[task_num*2:(task_num+1)*2, :, :, :, -3:]), valid_BP[task_num*2:(task_num+1)*2])
-    val_data = tf.data.Dataset.from_tensor_slices(((valid_frames[task_num * 2:(task_num + 1) * 2, :, :, :, :3],
-                                                    valid_frames[task_num * 2:(task_num + 1) * 2, :, :, :, -3:]),
-                                                   valid_BP[task_num * 2:(task_num + 1) * 2]))
-
-    train_frames = np.load(path + 'train_frames_batch_' + image_type + '.npy')
-    train_BP_lf = np.load(path + 'train_BP_batch_systolic.npy')
-    train_data = tf.data.Dataset.from_tensor_slices(((train_frames[task_num * 5:(task_num + 1) * 5, :, :, :, :3],
-                                                      train_frames[task_num * 5:(task_num + 1) * 5, :, :, :, -3:]),
-                                                     train_BP_lf[task_num * 5:(task_num + 1) * 5]))
-
-    train_data = train_data.batch(nb_batch)
-    val_data = val_data.batch(nb_batch)
-    options = tf.data.Options()
-    options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.OFF
-    train_data = train_data.with_options(options)
-    val_data = val_data.with_options(options)
-
-    model.fit(train_data, validation_data=val_data)
+    model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
 
     if device_type == "local":
         path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
@@ -317,14 +300,12 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
         model.load_weights(path + 'mt3d_sys_face_large.hdf5')
     save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
                                          save_best_only=True, verbose=1)
-    model.fit(train_data, validation_data=val_data, verbose=1, shuffle=False, use_multiprocessing=multiprocess,
-              validation_freq=3, epochs=nb_epoch, callbacks=[save_best_callback])
-    # model.fit(x=(train_frames[task_num*5:(task_num+1)*5, :, :, :, :3],
-    #              train_frames[task_num*5:(task_num+1)*5, :, :, :, -3:]),
-    #           y=train_BP_lf[task_num*5:(task_num+1)*5],
-    #           batch_size=nb_batch,
-    #           epochs=nb_epoch, callbacks=[save_best_callback], validation_data=valid_data,
-    #           verbose=1, shuffle=False, use_multiprocessing=multiprocess, validation_freq=3)
+    model.fit(x=(train_frames[task_num*5:(task_num+1)*5, :, :, :, :3],
+                 train_frames[task_num*5:(task_num+1)*5, :, :, :, -3:]),
+              y=train_BP_lf[task_num*5:(task_num+1)*5],
+              batch_size=nb_batch,
+              epochs=nb_epoch, callbacks=[save_best_callback], validation_data=valid_data,
+              verbose=1, shuffle=False, use_multiprocessing=multiprocess, validation_freq=3)
 
 
 if __name__ == "__main__":
@@ -369,12 +350,11 @@ if __name__ == "__main__":
     #     new_data_process(data_type=args.data_type, device_type=args.device_type)
 
     if args.exp_type == "model":
-        # for i in range(5):
-        i = 0
-        new_model_train(data_type=args.data_type, device_type=args.device_type,
-                        nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
-                        dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2,
-                        nb_dense=args.nb_dense, nb_batch=args.nb_batch, task_num=i,
-                        nb_epoch=args.nb_epoch, multiprocess=args.multiprocess, image_type=args.image_type)
+        for i in range(5):
+            new_model_train(data_type=args.data_type, device_type=args.device_type,
+                            nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
+                            dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2,
+                            nb_dense=args.nb_dense, nb_batch=args.nb_batch, task_num=i,
+                            nb_epoch=args.nb_epoch, multiprocess=args.multiprocess, image_type=args.image_type)
     else:
         new_data_process(data_type=args.data_type, device_type=args.device_type, image=args.image_type)
