@@ -352,11 +352,12 @@ if __name__ == "__main__":
     #     new_data_process(data_type=args.data_type, device_type=args.device_type)
 
     if args.exp_type == "model":
-        for i in range(5):
-            new_model_train(data_type=args.data_type, device_type=args.device_type,
-                            nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
-                            dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2,
-                            nb_dense=args.nb_dense, nb_batch=args.nb_batch, task_num=i,
-                            nb_epoch=args.nb_epoch, multiprocess=args.multiprocess, image_type=args.image_type)
+        # for i in range(5):
+        i = 0
+        new_model_train(data_type=args.data_type, device_type=args.device_type,
+                        nb_filters1=args.nb_filters1, nb_filters2=args.nb_filters2,
+                        dropout_rate1=args.dropout_rate1, dropout_rate2=args.dropout_rate2,
+                        nb_dense=args.nb_dense, nb_batch=args.nb_batch, task_num=i,
+                        nb_epoch=args.nb_epoch, multiprocess=args.multiprocess, image_type=args.image_type)
     else:
         new_data_process(data_type=args.data_type, device_type=args.device_type, image=args.image_type)
