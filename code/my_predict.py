@@ -3,12 +3,13 @@ import random
 import argparse
 import numpy as np
 from math import log
-from model import MTTS_CAN
+from model import MTTS_CAN, MT_CAN_3D
 from statistics import mean
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 from scipy.interpolate import interp1d
 from inference_preprocess import preprocess_raw_video
+from my_train import new_data_process
 
 
 def filter_fxn(pre_HR, cur_HR, cap):
@@ -48,29 +49,29 @@ def peaks():
     plt.show()
 
 
-def my_predict(data_type, dataset_type, kernal, dim):
+def my_predict(data_type, dataset_type, kernal, dim=36):
     img_rows = dim
     img_cols = dim
-    frame_depth = 1
+    frame_depth = 5200
     batch_size = 32
     path = 'C:/Users/Zed/Desktop/Project-BMFG'
-    model_checkpoint = path + '/checkpoints/mtts_sys_kernal' + kernal + '_' + dataset_type + '_drop2_nb256.hdf5'
+    # model_checkpoint = path + '/checkpoints/mtts_sys_kernal' + kernal + '_' + dataset_type + '_drop2_nb256.hdf5'
+    model_checkpoint = path + '/checkpoints/mt3d_sys_face_large.hdf5'
 
-    dXsub = np.load(path + '/preprocessed_v4v/' + data_type + '_frames_' + dataset_type + '.npy')
-    BP_gt = np.load(path + '/preprocessed_v4v/' + data_type + '_BP_mean_systolic.npy')
-    size = dXsub.shape[0]
-    print('*************', size, '*************')
-    print(BP_gt.shape)
-    x = random.randint(0, size - 25 * 500 - 1)
-    dXsub = dXsub[x:x + 25 * 500]
-    BP_gt = BP_gt[x:x + 25 * 500]
+    video = preprocess_raw_video('C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/Videos/test/14605267.mkv')
 
-    model = MTTS_CAN(frame_depth, 32, 64, (img_rows, img_cols, 3))
+    video = video.reshape((-1, video.shape[0], video.shape[1], video.shape[2], video.shape[3]))
+    dXsub = np.zeros((1, 5200, 36, 36, 6))
+    dXsub[0, 0:1848, :, :, :] = video
+    print(dXsub.shape)
+
+    model = MT_CAN_3D(frame_depth, 32, 64, (frame_depth, img_rows, img_cols, 3))
     model.load_weights(model_checkpoint)
-    BP_pred = model.predict((dXsub[:, :, :, :3], dXsub[:, :, :, -3:]), batch_size=batch_size, verbose=1)
-
+    BP_pred = model.predict((dXsub[:, :, :, :, :3], dXsub[:, :, :, :, -3:]), batch_size=batch_size, verbose=1)
+    print(BP_pred.shape)
+    BP_pred=BP_pred.reshape(-1,1)
     plt.plot(BP_pred, label='prediction')
-    plt.plot(BP_gt, label='ground truth')
+    # plt.plot(BP_gt, label='ground truth')
     plt.legend()
     plt.show()
 

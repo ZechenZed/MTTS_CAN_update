@@ -254,6 +254,8 @@ def new_data_process(data_type, device_type, image=str(), dim=36):
         saving_path = 'C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v_batch/'
     np.save(saving_path + data_type + '_frames_batch_' + image + '.npy', videos_batch)
     np.save(saving_path + data_type + '_BP_batch_systolic.npy', BP_lf)
+    if device_type == "local":
+        return videos_batch, BP_lf
 
 
 def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_rate1, dropout_rate2,
@@ -266,7 +268,7 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
 
     valid_frames = np.load(path + 'valid_frames_batch_' + image_type + '.npy')
     valid_BP = np.load(path + 'valid_BP_batch_systolic.npy')
-    valid_data = ((valid_frames[0:2, :, :, :, :3], valid_frames[0:2, :, :, :, -3:]), valid_BP[0:2])
+    valid_data = ((valid_frames[2:4, :, :, :, :3], valid_frames[2:4, :, :, :, -3:]), valid_BP[2:4])
 
     train_frames = np.load(path + 'train_frames_batch_' + image_type + '.npy')
     train_BP_lf = np.load(path + 'train_BP_batch_systolic.npy')
@@ -294,17 +296,14 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
         path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
     else:
         path = "/home/zechenzh/checkpoints_batch/"
-    if data_type == "test":
-        model.load_weights(path + 'mt3d_sys_face_large.hdf5')
-        model.evaluate(x=(train_frames[0:15, :, :, :, :3], train_frames[0:15, :, :, :, -3:]), y=train_BP_lf[0:15],
-                       batch_size=nb_batch)
-    else:
-        save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
-                                             save_best_only=True, verbose=1)
-        model.fit(x=(train_frames[0:8, :, :, :, :3], train_frames[0:8, :, :, :, -3:]), y=train_BP_lf[0:8],
-                  batch_size=nb_batch,
-                  epochs=nb_epoch, callbacks=[save_best_callback], validation_data=valid_data,
-                  verbose=1, shuffle=False, use_multiprocessing=multiprocess, validation_freq=3)
+
+    model.load_weights(path + 'mt3d_sys_face_large.hdf5')
+    save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
+                                         save_best_only=True, verbose=1)
+    model.fit(x=(train_frames[8:16, :, :, :, :3], train_frames[8:16, :, :, :, -3:]), y=train_BP_lf[8:16],
+              batch_size=nb_batch,
+              epochs=nb_epoch, callbacks=[save_best_callback], validation_data=valid_data,
+              verbose=1, shuffle=False, use_multiprocessing=multiprocess, validation_freq=3)
 
 
 if __name__ == "__main__":
