@@ -14,7 +14,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from inference_preprocess import preprocess_raw_video, count_frames
 from model import MTTS_CAN, MT_CAN_3D
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "4,5,6"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,4,5"
 
 
 # BP --> 25 Hz
@@ -288,8 +288,7 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     loss_weights = {"output_1": 1.0}
     opt = "Adam"
 
-    run_opts = tf.data.Options(report_tensor_allocations_upon_oom=True)
-    model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt, options=run_opts)
+    model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
 
     if device_type == "local":
         path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
