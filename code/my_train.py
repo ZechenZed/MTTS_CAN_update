@@ -296,8 +296,8 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
         path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
     else:
         path = "/home/zechenzh/checkpoints_batch/"
-
-    model.load_weights(path + 'mt3d_sys_face_large.hdf5')
+    if os.listdir(path):
+        model.load_weights(path + 'mt3d_sys_face_large.hdf5')
     save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
                                          save_best_only=True, verbose=1)
     model.fit(x=(train_frames[task_num*5:(task_num+1)*5, :, :, :, :3],
