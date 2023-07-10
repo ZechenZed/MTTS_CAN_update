@@ -318,7 +318,7 @@ def model_train(data_type, device_type, nb_filters1, nb_filters2,
 
 
 #########################################################################################
-def new_data_process(data_type, device_type, image=str()):
+def new_data_process(data_type, device_type, image=str(),dim=36):
     if device_type == "local":
         video_train_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/"
         video_valid_path = "C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/valid/"
@@ -351,13 +351,13 @@ def new_data_process(data_type, device_type, image=str()):
     for path in sorted(os.listdir(video_folder_path)):
         if os.path.isfile(os.path.join(video_folder_path, path)):
             video_file_path.append(path)
-    video_file_path = video_file_path[0:362]
+    # video_file_path = video_file_path[0:362]
     num_video = len(video_file_path)
     print('Processing ' + str(num_video) + ' Videos')
 
     # Face cropping in video
     videos = [Parallel(n_jobs=16)(
-        delayed(preprocess_raw_video)(video_folder_path + video) for video in video_file_path)]
+        delayed(preprocess_raw_video)(video_folder_path + video, dim) for video in video_file_path)]
     videos = videos[0]
 
     # # Max Frame finding
@@ -367,7 +367,7 @@ def new_data_process(data_type, device_type, image=str()):
 
     max_frame = 5200
 
-    videos_batch = np.zeros((num_video, max_frame, 48, 48, 6))
+    videos_batch = np.zeros((num_video, max_frame, dim, dim, 6))
 
     # BP file finding
     BP_file_path = []
@@ -411,7 +411,7 @@ def new_data_process(data_type, device_type, image=str()):
 
 
 def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_rate1, dropout_rate2,
-                    nb_dense, nb_batch, nb_epoch, multiprocess, image_type):
+                    nb_dense, nb_batch, nb_epoch, multiprocess, image_type,dim = 36):
     path = str()
     if device_type == "local":
         path = 'C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v/'
@@ -426,8 +426,8 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     BP_lf = np.load(path + 'train_BP_3d_systolic.npy')
 
     # Model setup
-    img_rows = 48
-    img_cols = 48
+    img_rows = dim
+    img_cols = dim
     frame_depth = 4000
     print('Max Frames: ', frame_depth)
     input_shape = (frame_depth, img_rows, img_cols, 3)

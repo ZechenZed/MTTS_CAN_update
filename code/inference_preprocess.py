@@ -6,7 +6,7 @@ from scipy.sparse import spdiags
 import matplotlib.pyplot as plt
 
 
-def preprocess_raw_video(videoFilePath, dim=48):
+def preprocess_raw_video(videoFilePath, dim=36):
     # set up
     print("***********Processing "+videoFilePath[-12:]+"***********")
     t = []
