@@ -14,7 +14,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from inference_preprocess import preprocess_raw_video, count_frames
 from model import MTTS_CAN, MT_CAN_3D
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3,4,5,6"
 
 
 # BP --> 25 Hz
@@ -495,7 +495,7 @@ if __name__ == "__main__":
                         help='nb_epoch')
     parser.add_argument('--nb_batch', type=int, default=2,
                         help='nb_batch')
-    parser.add_argument('--multiprocess', type=bool, default=False,
+    parser.add_argument('--multiprocess', type=bool, default=True,
                         help='Use multiprocess or not')
     args = parser.parse_args()
     print('input args:\n', json.dumps(vars(args), indent=4, separators=(',', ':')))  # pretty print args
