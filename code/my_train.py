@@ -278,7 +278,7 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     n_video = 25
     frame_depth = 5200
     # print('Max Frames: ', frame_depth)
-    input_shape = (img_rows, img_cols, frame_depth, 3)
+    input_shape = (frame_depth, img_rows, img_cols, 3)
     print('Using MT_CAN_3d')
 
     # Create a callback that saves the model's weights
