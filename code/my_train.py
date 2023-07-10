@@ -275,9 +275,9 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     # Model setup
     img_rows = dim
     img_cols = dim
-    frame_depth = 5200
+    frame_depth = 25
     # print('Max Frames: ', frame_depth)
-    input_shape = (frame_depth,img_rows, img_cols, 3)
+    input_shape = (5200, img_rows, img_cols, 3)
     print('Using MTTS_CAN!')
 
     # Create a callback that saves the model's weights

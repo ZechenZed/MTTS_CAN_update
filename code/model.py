@@ -57,8 +57,8 @@ class Attention_mask(tf.keras.layers.Layer):
 #         return config
 
 class TSM(tf.keras.layers.Layer):
-    def call(self, x, n_videos, n_frame, fold_div=3):
-        _, h, w, c = x.shape
+    def call(self, x, n_videos, fold_div=3):
+        n_frame, h, w, c = x.shape
         x = tf.reshape(x, (-1, n_videos, n_frame, h, w, c))
         fold = c // fold_div
         last_fold = c - (fold_div - 1) * fold
@@ -88,8 +88,8 @@ class TSM(tf.keras.layers.Layer):
         return config
 
 
-def TSM_Cov2D(x, n_video, n_frame, nb_filters=128, kernel_size=(3, 3), activation='tanh', padding='same'):
-    x = TSM()(x, n_video, n_frame)
+def TSM_Cov2D(x, n_frame, nb_filters=128, kernel_size=(3, 3), activation='tanh', padding='same'):
+    x = TSM()(x, n_frame)
     x = Conv2D(nb_filters, kernel_size, padding=padding, activation=activation)(x)
     return x
 
