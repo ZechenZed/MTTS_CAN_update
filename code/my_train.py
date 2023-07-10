@@ -15,7 +15,7 @@ from inference_preprocess import preprocess_raw_video, count_frames
 from model import MTTS_CAN, MT_CAN_3D
 
 
-# os.environ["CUDA_VISIBLE_DEVICES"] = ""
+os.environ["CUDA_VISIBLE_DEVICES"] = "3,4,6"
 
 
 # BP --> 25 Hz
@@ -276,7 +276,7 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     img_rows = dim
     img_cols = dim
     frame_depth = 5200
-    print('Max Frames: ', frame_depth)
+    # print('Max Frames: ', frame_depth)
     input_shape = (img_rows, img_cols, 3)
     print('Using MTTS_CAN!')
 
