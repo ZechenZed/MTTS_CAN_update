@@ -144,13 +144,13 @@ def TSM_Cov2D(x, n_video, n_frame, nb_filters=128, kernel_size=(3, 3), activatio
 #     model = Model(inputs=[diff_input, rawf_input], outputs=[out_y])
 #     return model
 
-def MTTS_CAN(n_videos, n_frame, nb_filters1, nb_filters2, input_shape, kernel_size=(3, 3), dropout_rate1=0.25,
+def MTTS_CAN(n_frame, nb_filters1, nb_filters2, input_shape, kernel_size=(3, 3), dropout_rate1=0.25,
              dropout_rate2=0.5, pool_size=(2, 2), nb_dense=128):
     diff_input = Input(shape=input_shape)
     rawf_input = Input(shape=input_shape)
 
-    d1 = TSM_Cov2D(diff_input, n_videos, n_frame, nb_filters1, kernel_size, padding='same', activation='tanh')
-    d2 = TSM_Cov2D(d1, n_videos, n_frame, nb_filters1, kernel_size, padding='valid', activation='tanh')
+    d1 = TSM_Cov2D(diff_input, n_frame, nb_filters1, kernel_size, padding='same', activation='tanh')
+    d2 = TSM_Cov2D(d1, n_frame, nb_filters1, kernel_size, padding='valid', activation='tanh')
 
     r1 = Conv2D(nb_filters1, kernel_size, padding='same', activation='tanh')(rawf_input)
     r2 = Conv2D(nb_filters1, kernel_size, activation='tanh')(r1)
@@ -165,8 +165,8 @@ def MTTS_CAN(n_videos, n_frame, nb_filters1, nb_filters2, input_shape, kernel_si
     r3 = AveragePooling2D(pool_size)(r2)
     r4 = Dropout(dropout_rate1)(r3)
 
-    d5 = TSM_Cov2D(d4, n_videos, n_frame, nb_filters2, kernel_size, padding='same', activation='tanh')
-    d6 = TSM_Cov2D(d5, n_videos, n_frame, nb_filters2, kernel_size, padding='valid', activation='tanh')
+    d5 = TSM_Cov2D(d4, n_frame, nb_filters2, kernel_size, padding='same', activation='tanh')
+    d6 = TSM_Cov2D(d5, n_frame, nb_filters2, kernel_size, padding='valid', activation='tanh')
 
     r5 = Conv2D(nb_filters2, kernel_size, padding='same', activation='tanh')(r4)
     r6 = Conv2D(nb_filters2, kernel_size, activation='tanh')(r5)
@@ -191,6 +191,7 @@ def MTTS_CAN(n_videos, n_frame, nb_filters1, nb_filters2, input_shape, kernel_si
     # model = Model(inputs=[diff_input, rawf_input], outputs=[out_y, out_r])
     model = Model(inputs=[diff_input, rawf_input], outputs=[out_y])
     return model
+
 
 
 def CAN(nb_filters1, nb_filters2, input_shape, kernel_size=(3, 3), dropout_rate1=0.25, dropout_rate2=0.5,
