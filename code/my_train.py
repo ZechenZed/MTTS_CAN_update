@@ -273,8 +273,8 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
 
     valid_frames = np.load(path + 'valid_frames_batch_' + image_type + '.npy')
     valid_BP = np.load(path + 'valid_BP_batch_systolic.npy')
-    valid_data = ((valid_frames[task_num * 2:(task_num + 1) * 2, :, :, :, :3],
-                   valid_frames[task_num * 2:(task_num + 1) * 2, :, :, :, -3:]),
+    valid_data = ((valid_frames[:, :, :, task_num * 2:(task_num + 1) * 2, :3],
+                   valid_frames[:, :, :, task_num * 2:(task_num + 1) * 2, -3:]),
                   valid_BP[task_num * 2:(task_num + 1) * 2])
 
     train_frames = np.load(path + 'train_frames_batch_' + image_type + '.npy')
