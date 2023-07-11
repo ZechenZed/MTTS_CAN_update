@@ -302,19 +302,19 @@ def MT_CAN_3D(n_frame, nb_filters1, nb_filters2, input_shape, kernel_size=(3, 3,
     g1 = Attention_mask()(g1)
     gated1 = multiply([d2, g1])
 
-    d3 = AveragePooling3D(pool_size)(gated1)
+    d3 = AveragePooling3D(pool_size,padding='same')(gated1)
     d4 = Dropout(dropout_rate1)(d3)
     d5 = Conv3D(nb_filters2, kernel_size, padding='same', activation='tanh')(d4)
     d6 = Conv3D(nb_filters2, kernel_size, activation='tanh')(d5)
 
-    r3 = AveragePooling3D(pool_size)(r2)
+    r3 = AveragePooling3D(pool_size,padding='same')(r2)
     r4 = Dropout(dropout_rate1)(r3)
     r5 = Conv3D(nb_filters2, kernel_size, padding='same', activation='tanh')(r4)
     r6 = Conv3D(nb_filters2, kernel_size, activation='tanh')(r5)
     g2 = Conv3D(1, (1, 1, 1), padding='same', activation='sigmoid')(r6)
     g2 = Attention_mask()(g2)
     gated2 = multiply([d6, g2])
-    d7 = AveragePooling3D(pool_size)(gated2)
+    d7 = AveragePooling3D(pool_size,padding='same')(gated2)
     d8 = Dropout(dropout_rate1)(d7)
 
     d9 = Flatten()(d8)
