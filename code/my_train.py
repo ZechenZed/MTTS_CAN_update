@@ -198,7 +198,7 @@ def new_data_process(data_type, device_type, image=str(), dim=36):
     for path in sorted(os.listdir(video_folder_path)):
         if os.path.isfile(os.path.join(video_folder_path, path)):
             video_file_path.append(path)
-    video_file_path = video_file_path[0:10]
+    video_file_path = video_file_path[0:25]
     num_video = len(video_file_path)
     print('Processing ' + str(num_video) + ' Videos')
 
@@ -213,6 +213,7 @@ def new_data_process(data_type, device_type, image=str(), dim=36):
     #     max_frame = max(max_frame, videos[i].shape[0] // 10 * 10)
 
     max_frame = 5200
+    # videos_batch = np.zeros((num_video, max_frame, dim, dim, 6))
     videos_batch = np.zeros((num_video, max_frame, dim, dim, 6))
 
     # BP file finding
@@ -241,11 +242,15 @@ def new_data_process(data_type, device_type, image=str(), dim=36):
         y_interp = interp1d([prev_index, current_frames - 1], [temp_BP_lf[prev_index], temp_BP_lf[current_frames - 1]])
         for l in range(prev_index, current_frames):
             temp_BP_lf_systolic_inter[l] = y_interp(l)
-
         BP_lf[i][0:current_frames] = temp_BP_lf_systolic_inter[:]
-        plt.plot(temp_BP_lf_systolic_inter)
-        plt.show()
+        # plt.plot(temp_BP_lf_systolic_inter)
+        # plt.show()
+
+        # Video Batches
         videos_batch[i][0:current_frames, :, :, :] = videos[i][0:current_frames, :, :, :]
+
+    videos_batch = np.reshape(videos_batch, (videos_batch.shape[0], videos_batch.shape[2], videos_batch.shape[3],
+                                             videos_batch.shape[1], videos_batch.shape[4]))
 
     saving_path = str()
     if device_type == "remote":
@@ -259,7 +264,7 @@ def new_data_process(data_type, device_type, image=str(), dim=36):
 
 
 def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_rate1, dropout_rate2,
-                    nb_dense, nb_batch, nb_epoch, multiprocess, image_type,task_num, dim=36):
+                    nb_dense, nb_batch, nb_epoch, multiprocess, image_type, task_num, dim=36):
     path = str()
     if device_type == "local":
         path = 'C:/Users/Zed/Desktop/Project-BMFG/preprocessed_v4v_batch/'
@@ -268,8 +273,9 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
 
     valid_frames = np.load(path + 'valid_frames_batch_' + image_type + '.npy')
     valid_BP = np.load(path + 'valid_BP_batch_systolic.npy')
-    valid_data = ((valid_frames[task_num*2:(task_num+1)*2, :, :, :, :3],
-                   valid_frames[task_num*2:(task_num+1)*2, :, :, :, -3:]), valid_BP[task_num*2:(task_num+1)*2])
+    valid_data = ((valid_frames[task_num * 2:(task_num + 1) * 2, :, :, :, :3],
+                   valid_frames[task_num * 2:(task_num + 1) * 2, :, :, :, -3:]),
+                  valid_BP[task_num * 2:(task_num + 1) * 2])
 
     train_frames = np.load(path + 'train_frames_batch_' + image_type + '.npy')
     train_BP_lf = np.load(path + 'train_BP_batch_systolic.npy')
@@ -300,9 +306,9 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
         model.load_weights(path + 'mt3d_sys_face_large.hdf5')
     save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
                                          save_best_only=True, verbose=1)
-    model.fit(x=(train_frames[task_num*5:(task_num+1)*5, :, :, :, :3],
-                 train_frames[task_num*5:(task_num+1)*5, :, :, :, -3:]),
-              y=train_BP_lf[task_num*5:(task_num+1)*5],
+    model.fit(x=(train_frames[task_num * 5:(task_num + 1) * 5, :, :, :, :3],
+                 train_frames[task_num * 5:(task_num + 1) * 5, :, :, :, -3:]),
+              y=train_BP_lf[task_num * 5:(task_num + 1) * 5],
               batch_size=nb_batch,
               epochs=nb_epoch, callbacks=[save_best_callback], validation_data=valid_data,
               verbose=1, shuffle=False, use_multiprocessing=multiprocess, validation_freq=3)
