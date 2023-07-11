@@ -296,7 +296,7 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     model = MT_CAN_3D(frame_depth, nb_filters1, nb_filters2, input_shape,
                       dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
                       nb_dense=nb_dense)
-    losses = tf.keras.losses.MeanAbsoluteError()
+    losses = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.SUM)
     loss_weights = {"output_1": 1.0}
     opt = "Adam"
 
