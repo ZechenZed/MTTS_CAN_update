@@ -292,15 +292,17 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     input_shape = (img_rows, img_cols, frame_depth, 3)
     print('Using MT_CAN_3d')
 
-    # Create a callback that saves the model's weights
-    model = MT_CAN_3D(frame_depth, nb_filters1, nb_filters2, input_shape,
-                      dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
-                      nb_dense=nb_dense)
-    losses = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.SUM)
-    loss_weights = {"output_1": 1.0}
-    opt = "Adam"
+    strategy = tf.distribute.MirroredStrategy()
+    with strategy.scope():
+        # Create a callback that saves the model's weights
+        model = MT_CAN_3D(frame_depth, nb_filters1, nb_filters2, input_shape,
+                          dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
+                          nb_dense=nb_dense)
+        losses = tf.keras.losses.MeanAbsoluteError(reduction=tf.keras.losses.Reduction.SUM)
+        loss_weights = {"output_1": 1.0}
+        opt = "Adam"
 
-    model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
+        model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
 
     if device_type == "local":
         path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
@@ -311,12 +313,10 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
                                          save_best_only=True, verbose=1)
 
-    strategy = tf.distribute.MirroredStrategy()
-    with strategy.scope():
-        model.fit(x=train_data, y=train_BP_lf[task_num * train_seg:(task_num + 1) * train_seg],
-                  validation_data=valid_data,
-                  batch_size=nb_batch, epochs=nb_epoch, callbacks=[save_best_callback],
-                  verbose=1, shuffle=False, use_multiprocessing=multiprocess, validation_freq=3)
+    model.fit(x=train_data, y=train_BP_lf[task_num * train_seg:(task_num + 1) * train_seg],
+              validation_data=valid_data,
+              batch_size=nb_batch, epochs=nb_epoch, callbacks=[save_best_callback],
+              verbose=1, shuffle=False, use_multiprocessing=multiprocess, validation_freq=3)
 
 
 if __name__ == "__main__":
