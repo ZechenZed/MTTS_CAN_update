@@ -273,8 +273,8 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
 
     valid_frames = np.load(path + 'valid_frames_batch_' + image_type + '.npy')
     valid_BP = np.load(path + 'valid_BP_batch_systolic.npy')
-    valid_data = ((valid_frames[:, :, :, task_num * 2:(task_num + 1) * 2, :3],
-                   valid_frames[:, :, :, task_num * 2:(task_num + 1) * 2, -3:]),
+    valid_data = ((valid_frames[task_num * 2:(task_num + 1) * 2, :, :, :, :3],
+                   valid_frames[task_num * 2:(task_num + 1) * 2, :, :, :, -3:]),
                   valid_BP[task_num * 2:(task_num + 1) * 2])
 
     train_frames = np.load(path + 'train_frames_batch_' + image_type + '.npy')
@@ -306,8 +306,8 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
         model.load_weights(path + 'mt3d_sys_face_large.hdf5')
     save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
                                          save_best_only=True, verbose=1)
-    model.fit(x=(train_frames[:, :, :, task_num * 5:(task_num + 1) * 5, :3],
-                 train_frames[:, :, :, task_num * 5:(task_num + 1) * 5, -3:]),
+    model.fit(x=(train_frames[task_num * 5:(task_num + 1) * 5, :, :, :, :3],
+                 train_frames[task_num * 5:(task_num + 1) * 5, :, :, :, -3:]),
               y=train_BP_lf[task_num * 5:(task_num + 1) * 5],
               batch_size=nb_batch,
               epochs=nb_epoch, callbacks=[save_best_callback], validation_data=valid_data,
