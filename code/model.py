@@ -288,7 +288,7 @@ def CAN_3D(n_frame, nb_filters1, nb_filters2, input_shape, kernel_size=(3, 3, 3)
 
 # %%
 def MT_CAN_3D(n_frame, nb_filters1, nb_filters2, input_shape, kernel_size=(3, 3, 3), dropout_rate1=0.25,
-              dropout_rate2=0.5, pool_size=(8, 8, 8), nb_dense=128):
+              dropout_rate2=0.5, pool_size=(6, 6, 6), nb_dense=128):
     diff_input = Input(shape=input_shape)
     rawf_input = Input(shape=input_shape)
 
