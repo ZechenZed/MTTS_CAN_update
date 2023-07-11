@@ -289,8 +289,8 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
 
         model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
 
-    train_seg = 5
-    valid_seg = 2
+    train_seg = 15
+    valid_seg = 5
 
     valid_frames = np.load(path + 'valid_frames_batch_' + image_type + '.npy')
     valid_BP = np.load(path + 'valid_BP_batch_systolic.npy')
@@ -353,7 +353,7 @@ if __name__ == "__main__":
                         help='number of dense units')
     parser.add_argument('-g', '--nb_epoch', type=int, default=6,
                         help='nb_epoch')
-    parser.add_argument('--nb_batch', type=int, default=6,
+    parser.add_argument('--nb_batch', type=int, default=3,
                         help='nb_batch')
     parser.add_argument('--multiprocess', type=bool, default=True,
                         help='Use multiprocess or not')
