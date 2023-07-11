@@ -282,9 +282,8 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
 
     train_frames = np.load(path + 'train_frames_batch_' + image_type + '.npy')
     train_BP_lf = np.load(path + 'train_BP_batch_systolic.npy')
-    train_data = ((train_frames[task_num * train_seg:(task_num + 1) * train_seg, :, :, :, :3],
-                   train_frames[task_num * train_seg:(task_num + 1) * train_seg, :, :, :, -3:],),
-                  train_BP_lf[task_num * train_seg:(task_num + 1) * train_seg])
+    train_data = (train_frames[task_num * train_seg:(task_num + 1) * train_seg, :, :, :, :3],
+                  train_frames[task_num * train_seg:(task_num + 1) * train_seg, :, :, :, -3:])
 
     # Model setup
     img_rows = dim
@@ -314,7 +313,8 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
 
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
-        model.fit(train_data, validation_data=valid_data,
+        model.fit(x=train_data, y=train_BP_lf[task_num * train_seg:(task_num + 1) * train_seg],
+                  validation_data=valid_data,
                   batch_size=nb_batch, epochs=nb_epoch, callbacks=[save_best_callback],
                   verbose=1, shuffle=False, use_multiprocessing=multiprocess, validation_freq=3)
 
