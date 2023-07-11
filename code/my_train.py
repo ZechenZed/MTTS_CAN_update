@@ -351,7 +351,7 @@ if __name__ == "__main__":
                         help='learning rate')
     parser.add_argument('-e', '--nb_dense', type=int, default=128,
                         help='number of dense units')
-    parser.add_argument('-g', '--nb_epoch', type=int, default=8,
+    parser.add_argument('-g', '--nb_epoch', type=int, default=6,
                         help='nb_epoch')
     parser.add_argument('--nb_batch', type=int, default=4,
                         help='nb_batch')
