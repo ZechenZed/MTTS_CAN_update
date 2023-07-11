@@ -88,6 +88,26 @@ if __name__ == '__main__':
     parser.add_argument('-dense', '--nv_dense', type=str, default='256',
                         help='dataset type')
     args = parser.parse_args()
-    my_predict(args.data_type, args.dataset_type, args.kernal_size)
+    # my_predict(args.data_type, args.dataset_type, args.kernal_size)
     # preprocess_raw_video('C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/F001_T1.mkv')
     # peaks()
+
+    array_shape = (276, 5200, 36, 36, 6)
+    element_dtype = np.float32
+
+    # Generate random array with the given shape
+    random_array = np.random.rand(*array_shape).astype(element_dtype)
+
+    # Calculate the storage size
+    storage_size = random_array.nbytes
+
+    # Convert to appropriate units
+    storage_size_GB = storage_size / (1024**3)
+    storage_size_MB = storage_size / (1024**2)
+    storage_size_KB = storage_size / 1024
+
+    # Print the storage size
+    print(f"Storage Size: {storage_size_GB:.2f} GB")
+    print(f"Storage Size: {storage_size_MB:.2f} MB")
+    print(f"Storage Size: {storage_size_KB:.2f} KB")
+    print(f"Storage Size: {storage_size} bytes")
