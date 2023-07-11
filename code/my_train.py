@@ -271,29 +271,14 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     else:
         path = '/edrive2/zechenzh/preprocessed_v4v_batch/'
 
-    train_seg = 5
-    valid_seg = 2
-
-    valid_frames = np.load(path + 'valid_frames_batch_' + image_type + '.npy')
-    valid_BP = np.load(path + 'valid_BP_batch_systolic.npy')
-    valid_data = ((valid_frames[task_num * valid_seg:(task_num + 1) * valid_seg, :, :, :, :3],
-                   valid_frames[task_num * valid_seg:(task_num + 1) * valid_seg, :, :, :, -3:]),
-                  valid_BP[task_num * valid_seg:(task_num + 1) * valid_seg])
-
-    train_frames = np.load(path + 'train_frames_batch_' + image_type + '.npy')
-    train_BP_lf = np.load(path + 'train_BP_batch_systolic.npy')
-    train_data = (train_frames[task_num * train_seg:(task_num + 1) * train_seg, :, :, :, :3],
-                  train_frames[task_num * train_seg:(task_num + 1) * train_seg, :, :, :, -3:])
-
-    # Model setup
-    img_rows = dim
-    img_cols = dim
-    frame_depth = 5200
-    input_shape = (img_rows, img_cols, frame_depth, 3)
-    print('Using MT_CAN_3d')
-
     strategy = tf.distribute.MirroredStrategy()
     with strategy.scope():
+        # Model setup
+        img_rows = dim
+        img_cols = dim
+        frame_depth = 5200
+        input_shape = (img_rows, img_cols, frame_depth, 3)
+        print('Using MT_CAN_3d')
         # Create a callback that saves the model's weights
         model = MT_CAN_3D(frame_depth, nb_filters1, nb_filters2, input_shape,
                           dropout_rate1=dropout_rate1, dropout_rate2=dropout_rate2,
@@ -304,6 +289,32 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
 
         model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt)
 
+    train_seg = 5
+    valid_seg = 2
+
+    valid_frames = np.load(path + 'valid_frames_batch_' + image_type + '.npy')
+    valid_BP = np.load(path + 'valid_BP_batch_systolic.npy')
+    val_x = (valid_frames[task_num * valid_seg:(task_num + 1) * valid_seg, :, :, :, :3],
+               valid_frames[task_num * valid_seg:(task_num + 1) * valid_seg, :, :, :, -3:])
+    val_y = valid_BP[task_num * valid_seg:(task_num + 1) * valid_seg]
+    val_data = tf.data.Dataset.from_tensor_slices((val_x, val_y))
+
+    train_frames = np.load(path + 'train_frames_batch_' + image_type + '.npy')
+    train_BP_lf = np.load(path + 'train_BP_batch_systolic.npy')
+    train_x = (train_frames[task_num * train_seg:(task_num + 1) * train_seg, :, :, :, :3],
+               train_frames[task_num * train_seg:(task_num + 1) * train_seg, :, :, :, -3:])
+    train_y = train_BP_lf[task_num * train_seg:(task_num + 1) * train_seg]
+    train_data = tf.data.Dataset.from_tensor_slices((train_x, train_y))
+
+    batch_size = nb_batch
+    train_data = train_data.batch(batch_size)
+    val_data = val_data.batch(batch_size)
+
+    options = tf.data.Options()
+    options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.OFF
+    train_data = train_data.with_options(options)
+    val_data = val_data.with_options(options)
+
     if device_type == "local":
         path = "C:/Users/Zed/Desktop/Project-BMFG/BMFG/checkpoints/"
     else:
@@ -313,9 +324,7 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
                                          save_best_only=True, verbose=1)
 
-    model.fit(x=train_data, y=train_BP_lf[task_num * train_seg:(task_num + 1) * train_seg],
-              validation_data=valid_data,
-              batch_size=nb_batch, epochs=nb_epoch, callbacks=[save_best_callback],
+    model.fit(train_data, validation_data=val_data, epochs=nb_epoch, callbacks=[save_best_callback],
               verbose=1, shuffle=False, use_multiprocessing=multiprocess, validation_freq=3)
 
 
