@@ -271,20 +271,25 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     else:
         path = '/edrive2/zechenzh/preprocessed_v4v_batch/'
 
+    train_seg = 5
+    valid_seg = 2
+
     valid_frames = np.load(path + 'valid_frames_batch_' + image_type + '.npy')
     valid_BP = np.load(path + 'valid_BP_batch_systolic.npy')
-    valid_data = ((valid_frames[task_num * 5:(task_num + 1) *5, :, :, :, :3],
-                   valid_frames[task_num * 5:(task_num + 1) *5, :, :, :, -3:]),
-                  valid_BP[task_num * 5:(task_num + 1) * 5])
+    valid_data = ((valid_frames[task_num * valid_seg:(task_num + 1) * valid_seg, :, :, :, :3],
+                   valid_frames[task_num * valid_seg:(task_num + 1) * valid_seg, :, :, :, -3:]),
+                  valid_BP[task_num * valid_seg:(task_num + 1) * valid_seg])
 
     train_frames = np.load(path + 'train_frames_batch_' + image_type + '.npy')
     train_BP_lf = np.load(path + 'train_BP_batch_systolic.npy')
+    train_data = ((train_frames[task_num * train_seg:(task_num + 1) * train_seg, :, :, :, :3],
+                   train_frames[task_num * train_seg:(task_num + 1) * train_seg, :, :, :, -3:],),
+                  train_BP_lf[task_num * train_seg:(task_num + 1) * train_seg])
 
     # Model setup
     img_rows = dim
     img_cols = dim
     frame_depth = 5200
-    # print('Max Frames: ', frame_depth)
     input_shape = (img_rows, img_cols, frame_depth, 3)
     print('Using MT_CAN_3d')
 
@@ -306,12 +311,12 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
         model.load_weights(path + 'mt3d_sys_face_large.hdf5')
     save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
                                          save_best_only=True, verbose=1)
-    model.fit(x=(train_frames[task_num * 15:(task_num + 1) * 15, :, :, :, :3],
-                 train_frames[task_num * 15:(task_num + 1) * 15, :, :, :, -3:]),
-              y=train_BP_lf[task_num * 15:(task_num + 1) * 15],
-              batch_size=nb_batch,
-              epochs=nb_epoch, callbacks=[save_best_callback], validation_data=valid_data,
-              verbose=1, shuffle=False, use_multiprocessing=multiprocess, validation_freq=3)
+
+    strategy = tf.distribute.MirroredStrategy()
+    with strategy.scope():
+        model.fit(train_data, validation_data=valid_data,
+                  batch_size=nb_batch, epochs=nb_epoch, callbacks=[save_best_callback],
+                  verbose=1, shuffle=False, use_multiprocessing=multiprocess, validation_freq=3)
 
 
 if __name__ == "__main__":
