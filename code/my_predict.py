@@ -53,23 +53,24 @@ def my_predict(data_type, dataset_type, kernal, dim=36):
     img_rows = dim
     img_cols = dim
     frame_depth = 5200
-    batch_size = 32
+    batch_size = 6
     path = 'C:/Users/Zed/Desktop/Project-BMFG'
     # model_checkpoint = path + '/checkpoints/mtts_sys_kernal' + kernal + '_' + dataset_type + '_drop2_nb256.hdf5'
     model_checkpoint = path + '/checkpoints/mt3d_sys_face_large.hdf5'
 
-    video = preprocess_raw_video('C:/Users/Zed/Desktop/Project-BMFG/Phase2_data/Videos/test/14605267.mkv')
+    video = preprocess_raw_video('C:/Users/Zed/Desktop/Project-BMFG/Phase1_data/Videos/train/F001_T1.mkv')
 
-    video = video.reshape((-1, video.shape[0], video.shape[1], video.shape[2], video.shape[3]))
-    dXsub = np.zeros((1, 5200, 36, 36, 6))
-    dXsub[0, 0:1848, :, :, :] = video
+    # video = video.reshape((-1, video.shape[0], video.shape[1], video.shape[2], video.shape[3]))
+    video = np.reshape(video, (-1, video.shape[1], video.shape[2], video.shape[0], video.shape[3]))
+    dXsub = np.zeros((1, 36, 36, 5200, 6))
+    dXsub[0, :, :, 0:video.shape[3], :] = video
     print(dXsub.shape)
 
-    model = MT_CAN_3D(frame_depth, 32, 64, (frame_depth, img_rows, img_cols, 3))
+    model = MT_CAN_3D(frame_depth, 32, 64, (img_rows, img_cols, frame_depth, 3))
     model.load_weights(model_checkpoint)
     BP_pred = model.predict((dXsub[:, :, :, :, :3], dXsub[:, :, :, :, -3:]), batch_size=batch_size, verbose=1)
     print(BP_pred.shape)
-    BP_pred=BP_pred.reshape(-1,1)
+    BP_pred = BP_pred.reshape(-1, 1)
     plt.plot(BP_pred, label='prediction')
     # plt.plot(BP_gt, label='ground truth')
     plt.legend()
