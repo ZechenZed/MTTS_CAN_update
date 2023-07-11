@@ -271,7 +271,7 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     else:
         path = '/edrive2/zechenzh/preprocessed_v4v_batch/'
 
-    strategy = tf.distribute.MirroredStrategy()
+    strategy = tf.distribute.experimental.MultiWorkerMirroredStrategy()
     with strategy.scope():
         # Model setup
         img_rows = dim
