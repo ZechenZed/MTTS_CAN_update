@@ -285,7 +285,7 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
     img_cols = dim
     frame_depth = 5200
     # print('Max Frames: ', frame_depth)
-    input_shape = (frame_depth, img_rows, img_cols, 3)
+    input_shape = (img_rows, img_cols, frame_depth, 3)
     print('Using MT_CAN_3d')
 
     # Create a callback that saves the model's weights
@@ -306,8 +306,8 @@ def new_model_train(data_type, device_type, nb_filters1, nb_filters2, dropout_ra
         model.load_weights(path + 'mt3d_sys_face_large.hdf5')
     save_best_callback = ModelCheckpoint(filepath=path + 'mt3d_sys_face_large.hdf5',
                                          save_best_only=True, verbose=1)
-    model.fit(x=(train_frames[task_num * 5:(task_num + 1) * 5, :, :, :, :3],
-                 train_frames[task_num * 5:(task_num + 1) * 5, :, :, :, -3:]),
+    model.fit(x=(train_frames[:, :, :, task_num * 5:(task_num + 1) * 5, :3],
+                 train_frames[:, :, :, task_num * 5:(task_num + 1) * 5, -3:]),
               y=train_BP_lf[task_num * 5:(task_num + 1) * 5],
               batch_size=nb_batch,
               epochs=nb_epoch, callbacks=[save_best_callback], validation_data=valid_data,
