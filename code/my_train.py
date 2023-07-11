@@ -351,9 +351,9 @@ if __name__ == "__main__":
                         help='learning rate')
     parser.add_argument('-e', '--nb_dense', type=int, default=128,
                         help='number of dense units')
-    parser.add_argument('-g', '--nb_epoch', type=int, default=15,
+    parser.add_argument('-g', '--nb_epoch', type=int, default=8,
                         help='nb_epoch')
-    parser.add_argument('--nb_batch', type=int, default=3,
+    parser.add_argument('--nb_batch', type=int, default=2,
                         help='nb_batch')
     parser.add_argument('--multiprocess', type=bool, default=True,
                         help='Use multiprocess or not')
